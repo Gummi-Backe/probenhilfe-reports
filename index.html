@@ -1,0 +1,1186 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Probenhilfe - Cue-Sequenz</title>
+<style>
+
+:root{
+  --bg:#0b1220;
+  --panel:#0f172a;
+  --card:#111b31;
+  --border:#223254;
+  --text:#e5e7eb;
+  --muted:#a7b0c0;
+  --ok:#133a2a;
+  --okBorder:#1f6f52;
+  --bring:#113a5e;
+  --bringBorder:#2b7bbb;
+  --warn:#3a1520;
+  --warnBorder:#d1495b;
+  --neutral:#131a2c;
+  --neutralBorder:#2a3658;
+  --notice:#ffb703;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  background:linear-gradient(180deg,var(--bg),#070c16);
+  color:var(--text);
+  font-family:Segoe UI,system-ui,-apple-system,Arial,sans-serif;
+  line-height:1.35;
+}
+.toolbar{
+  position:sticky;
+  top:0;
+  z-index:50;
+  border-bottom:1px solid rgba(255,255,255,.10);
+  background:rgba(8,12,22,.86);
+  backdrop-filter:blur(10px);
+}
+.toolbarInner{
+  max-width:1200px;
+  margin:0 auto;
+  padding:8px 10px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+}
+.toolbarLeft{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:nowrap;
+}
+.toggle{
+  position:relative;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:6px 8px;
+  border:1px solid var(--border);
+  border-radius:999px;
+  background:rgba(255,255,255,.03);
+  color:var(--text);
+  font-size:12px;
+}
+.toggle input{
+  position:absolute;
+  opacity:0;
+  width:1px;
+  height:1px;
+  pointer-events:none;
+}
+.toggleIcon{
+  display:inline-flex;
+  width:22px;
+  height:22px;
+  align-items:center;
+  justify-content:center;
+  border-radius:8px;
+  border:1px solid rgba(255,255,255,.10);
+  background:rgba(0,0,0,.18);
+  color:var(--muted);
+  font-size:14px;
+  line-height:1;
+  user-select:none;
+}
+.toggle input:checked + .toggleIcon{
+  color:var(--notice);
+  border-color:rgba(255,183,3,.55);
+}
+.toolbarRight{
+  display:flex;
+  gap:6px;
+  align-items:center;
+}
+.btn{
+  appearance:none;
+  border:1px solid var(--border);
+  background:rgba(255,255,255,.03);
+  color:var(--text);
+  padding:6px 8px;
+  border-radius:10px;
+  font-size:12px;
+  cursor:pointer;
+}
+.btn:active{transform:translateY(1px)}
+.btn.iconBtn{
+  width:34px;
+  height:30px;
+  padding:0;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  font-size:14px;
+  line-height:1;
+}
+.btn.iconBtn.helpBtn{
+  font-weight:800;
+}
+.helpOverlay{
+  position:fixed;
+  inset:0;
+  z-index:10000;
+  display:none;
+  padding:18px 12px;
+  background:rgba(0,0,0,.55);
+  backdrop-filter:blur(6px);
+}
+.helpOverlay.open{display:block}
+.helpModal{
+  max-width:920px;
+  margin:0 auto;
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:16px;
+  background:rgba(15,23,42,.95);
+  box-shadow:0 22px 80px rgba(0,0,0,.55);
+  overflow:hidden;
+}
+.helpHead{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:12px 12px;
+  border-bottom:1px solid rgba(255,255,255,.10);
+  background:rgba(255,255,255,.03);
+}
+.helpTitle{
+  font-weight:750;
+  letter-spacing:.2px;
+}
+.helpBody{
+  padding:12px 12px 16px;
+  max-height:80vh;
+  overflow:auto;
+  -webkit-overflow-scrolling:touch;
+}
+.helpBody h3{
+  margin:14px 0 6px;
+  font-size:13px;
+  color:#dbe3f0;
+}
+.helpBody p, .helpBody li{
+  margin:0;
+  color:var(--muted);
+  font-size:12.5px;
+  line-height:1.45;
+}
+.helpBody ul{
+  margin:8px 0 0 18px;
+  padding:0;
+  display:grid;
+  gap:6px;
+}
+.kbd{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:18px;
+  padding:2px 6px;
+  border:1px solid rgba(255,255,255,.16);
+  border-bottom-width:2px;
+  border-radius:8px;
+  background:rgba(0,0,0,.18);
+  color:#e5e7eb;
+  font-size:12px;
+  font-variant-numeric:tabular-nums;
+}
+.helpCloseX{
+  width:34px;
+  height:30px;
+  padding:0;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+}
+.wrap{
+  max-width:1200px;
+  margin:0 auto;
+  padding:22px 18px 40px;
+}
+.header{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:16px;
+  margin-bottom:16px;
+  flex-wrap:wrap;
+}
+.title{
+  font-size:20px;
+  font-weight:700;
+  letter-spacing:.2px;
+}
+.subtitle{
+  margin-top:6px;
+  color:var(--muted);
+  font-size:13px;
+}
+.meta{
+  text-align:right;
+  color:var(--muted);
+  font-size:12px;
+}
+.legend{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin:10px 0 18px;
+}
+.chip{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:6px 10px;
+  border:1px solid var(--border);
+  background:rgba(255,255,255,.03);
+  border-radius:999px;
+  color:var(--muted);
+  font-size:12px;
+}
+.dot{width:10px;height:10px;border-radius:999px}
+.dot.bring{background:var(--bringBorder)}
+.dot.ok{background:var(--okBorder)}
+.dot.warn{background:var(--warnBorder)}
+.dot.neutral{background:var(--neutralBorder)}
+.section{
+  border:1px solid var(--border);
+  background:rgba(17,27,49,.45);
+  border-radius:14px;
+  overflow:hidden;
+  margin:14px 0;
+}
+.sectionHead{
+  padding:12px 14px;
+  background:rgba(255,255,255,.03);
+  border-bottom:1px solid var(--border);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+}
+.sectionTitle{
+  font-weight:650;
+}
+.sectionSummary{
+  color:var(--muted);
+  font-size:12px;
+}
+.steps{
+  padding:12px;
+  display:grid;
+  gap:12px;
+}
+.step{
+  border:1px solid var(--border);
+  background:var(--card);
+  border-radius:12px;
+  overflow:hidden;
+  box-shadow:0 6px 22px rgba(0,0,0,.18);
+}
+.stepHead{
+  padding:10px 12px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  border-bottom:1px solid rgba(255,255,255,.06);
+  cursor:pointer;
+}
+.step.dragging{opacity:.65; outline:2px dashed rgba(255,255,255,.25);}
+.step.swapFlash{outline:2px solid rgba(255,183,3,.30);}
+.dragHandle{
+  width:26px;
+  height:26px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border:1px solid var(--border);
+  border-radius:8px;
+  background:rgba(0,0,0,.18);
+  color:var(--muted);
+  flex:0 0 auto;
+  cursor:grab;
+  user-select:none;
+  touch-action:none;
+}
+.dragHandle:active{cursor:grabbing}
+.stepBody{display:block}
+body.compact .stepBody{display:none}
+.stepBody.open{display:block}
+.dragGhost{
+  position:fixed;
+  z-index:9999;
+  pointer-events:none;
+  opacity:.92;
+  transform:translate3d(0,0,0);
+  box-shadow:0 14px 42px rgba(0,0,0,.45);
+}
+.dropPlaceholder{
+  border:2px dashed rgba(255,255,255,.25);
+  border-radius:12px;
+  background:rgba(255,255,255,.04);
+}
+.reorderBtns{
+  display:none;
+  gap:6px;
+  align-items:center;
+}
+body.compact .reorderBtns{display:flex}
+.miniBtn{
+  width:28px;
+  height:26px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border:1px solid var(--border);
+  border-radius:8px;
+  background:rgba(255,255,255,.03);
+  color:var(--text);
+  cursor:pointer;
+  font-size:12px;
+}
+.miniBtn:active{transform:translateY(1px)}
+.stepLeft{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-width:0;
+}
+.stepIndex{
+  width:34px;
+  height:24px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border:1px solid var(--border);
+  border-radius:8px;
+  color:var(--muted);
+  font-size:12px;
+  flex:0 0 auto;
+  background:rgba(0,0,0,.15);
+}
+.stepTitle{
+  font-weight:650;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.badges{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+  align-items:center;
+}
+.badge{
+  border:1px solid var(--border);
+  background:rgba(255,255,255,.03);
+  color:var(--muted);
+  border-radius:999px;
+  padding:4px 9px;
+  font-size:12px;
+}
+.badge.warn{border-color:var(--warnBorder); color:#ffd3d9}
+.badge.notice{border-color:var(--notice); color:#ffe8a3}
+.disabledNote{
+  padding:10px 12px;
+  color:#cbd5e1;
+  font-size:12px;
+  border-top:1px dashed rgba(255,255,255,.10);
+  background:rgba(0,0,0,.12);
+}
+.tableWrap{
+  max-height:none;
+  overflow:visible;
+}
+table{
+  width:100%;
+  border-collapse:separate;
+  border-spacing:0;
+  font-size:12.5px;
+}
+thead th{
+  background:rgba(8,12,22,.92);
+  text-align:left;
+  padding:9px 10px;
+  border-bottom:1px solid rgba(255,255,255,.08);
+  color:#cbd5e1;
+  font-weight:650;
+}
+tbody td{
+  padding:8px 10px;
+  border-bottom:1px solid rgba(255,255,255,.06);
+  vertical-align:top;
+}
+tbody tr:last-child td{border-bottom:none}
+.row.ok{background:linear-gradient(90deg,rgba(31,111,82,.28),rgba(17,27,49,.0))}
+.row.bring{background:linear-gradient(90deg,rgba(43,123,187,.28),rgba(17,27,49,.0))}
+.row.warn{background:linear-gradient(90deg,rgba(209,73,91,.22),rgba(17,27,49,.0))}
+.row.neutral{background:linear-gradient(90deg,rgba(42,54,88,.26),rgba(17,27,49,.0))}
+.row.ok td:first-child{border-left:4px solid var(--okBorder); padding-left:8px}
+.row.bring td:first-child{border-left:4px solid var(--bringBorder); padding-left:8px}
+.row.warn td:first-child{border-left:4px solid var(--warnBorder); padding-left:8px}
+.row.neutral td:first-child{border-left:4px solid var(--neutralBorder); padding-left:8px}
+.mono{font-variant-numeric:tabular-nums}
+.noticeText{color:var(--notice); font-weight:700}
+.status{color:#e5e7eb}
+.muted{color:var(--muted)}
+
+@media (max-width: 720px){
+  .wrap{padding:16px 12px 30px;}
+  .title{font-size:18px;}
+  .subtitle{font-size:12px;}
+  .meta{text-align:left;}
+  .sectionHead{flex-direction:column; align-items:flex-start;}
+  .stepHead{flex-direction:column; align-items:flex-start;}
+  .stepTitle{white-space:normal}
+  .badges{justify-content:flex-start;}
+  thead th, tbody td{padding:8px 8px;}
+  table{font-size:12px;}
+  .stepIndex{width:32px;}
+  .toolbarInner{padding:6px 8px; gap:6px}
+  .btn.iconBtn{width:32px; height:28px}
+  .helpBody{max-height:78vh}
+}
+
+</style>
+<script>
+
+function updateStepIndices(stepsEl){
+  const items = Array.from(stepsEl.querySelectorAll('.step'));
+  items.forEach((el, i) => {
+    const idx = el.querySelector('.stepIndex');
+    if (idx) idx.textContent = String(i+1);
+  });
+}
+
+function closestStep(el){
+  return el ? el.closest('.step') : null;
+}
+
+function setAllCollapsed(collapsed){
+  document.body.classList.toggle('compact', collapsed);
+  document.querySelectorAll('.stepBody').forEach(b => {
+    b.classList.toggle('open', !collapsed);
+    b.style.display = '';
+  });
+}
+
+function enableCollapse(){
+  document.querySelectorAll('.stepHead').forEach(head => {
+    head.addEventListener('click', (e) => {
+      const step = closestStep(e.target);
+      if (!step) return;
+      const body = step.querySelector('.stepBody');
+      if (!body) return;
+      // Handle/Buttons sollen nicht togglen.
+      if (e.target.closest('.dragHandle') || e.target.closest('.miniBtn')) return;
+      body.classList.toggle('open');
+      // Wenn kompakt: open ueberschreibt das globale hidden
+      if (document.body.classList.contains('compact') && body.classList.contains('open')){
+        body.style.display = 'block';
+      }else{
+        body.style.display = '';
+      }
+    });
+  });
+
+  const compactToggle = document.getElementById('compactToggle');
+  if (compactToggle){
+    compactToggle.addEventListener('change', () => {
+      setAllCollapsed(compactToggle.checked);
+    });
+  }
+
+  const collapseAllBtn = document.getElementById('collapseAllBtn');
+  if (collapseAllBtn){
+    collapseAllBtn.addEventListener('click', () => {
+      if (compactToggle){ compactToggle.checked = true; }
+      setAllCollapsed(true);
+    });
+  }
+  const expandAllBtn = document.getElementById('expandAllBtn');
+  if (expandAllBtn){
+    expandAllBtn.addEventListener('click', () => {
+      if (compactToggle){ compactToggle.checked = false; }
+      setAllCollapsed(false);
+    });
+  }
+}
+
+function moveStep(step, direction){
+  const parent = step.parentNode;
+  if (!parent) return;
+
+  const other = direction < 0 ? step.previousElementSibling : step.nextElementSibling;
+  if (!other) return;
+
+  // FLIP animation (swap) for better visual feedback
+  if (parent.dataset.animating === '1') return;
+  parent.dataset.animating = '1';
+
+  const a = step;
+  const b = other;
+  const aFirst = a.getBoundingClientRect();
+  const bFirst = b.getBoundingClientRect();
+
+  if (direction < 0){
+    parent.insertBefore(a, b);
+  }else{
+    parent.insertBefore(b, a);
+  }
+  updateStepIndices(parent);
+
+  const aLast = a.getBoundingClientRect();
+  const bLast = b.getBoundingClientRect();
+
+  const aDy = aFirst.top - aLast.top;
+  const bDy = bFirst.top - bLast.top;
+
+  a.classList.add('swapFlash');
+  b.classList.add('swapFlash');
+
+  a.style.transition = 'none';
+  b.style.transition = 'none';
+  a.style.transform = `translateY(${aDy}px)`;
+  b.style.transform = `translateY(${bDy}px)`;
+
+  // Force reflow then animate to 0
+  void a.offsetWidth;
+
+  const durationMs = 180;
+  a.style.transition = `transform ${durationMs}ms ease`;
+  b.style.transition = `transform ${durationMs}ms ease`;
+  a.style.transform = '';
+  b.style.transform = '';
+
+  window.setTimeout(() => {
+    a.style.transition = '';
+    b.style.transition = '';
+    a.classList.remove('swapFlash');
+    b.classList.remove('swapFlash');
+    parent.dataset.animating = '0';
+  }, durationMs + 60);
+}
+
+function enableReorderButtons(){
+  document.querySelectorAll('.miniBtn[data-move]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const step = closestStep(btn);
+      if (!step) return;
+      const dir = btn.getAttribute('data-move') === 'up' ? -1 : 1;
+      moveStep(step, dir);
+    });
+  });
+}
+
+function enablePointerReorder(stepsEl){
+  let dragging = null;      // { step, ghost, placeholder, offsetX, offsetY }
+  let lastScrollTs = 0;
+
+  function createPlaceholder(height){
+    const ph = document.createElement('div');
+    ph.className = 'dropPlaceholder';
+    ph.style.height = height + 'px';
+    return ph;
+  }
+
+  function createGhost(step, rect){
+    const ghost = step.cloneNode(true);
+    ghost.classList.add('dragGhost');
+    ghost.style.width = rect.width + 'px';
+    ghost.style.left = rect.left + 'px';
+    ghost.style.top = rect.top + 'px';
+    return ghost;
+  }
+
+  function setGhostPos(clientX, clientY){
+    if (!dragging) return;
+    dragging.ghost.style.left = (clientX - dragging.offsetX) + 'px';
+    dragging.ghost.style.top  = (clientY - dragging.offsetY) + 'px';
+  }
+
+  function autoScroll(clientY){
+    const now = Date.now();
+    if (now - lastScrollTs < 30) return;
+    lastScrollTs = now;
+    const margin = 70;
+    const speed = 22;
+    if (clientY < margin) window.scrollBy(0, -speed);
+    else if (clientY > (window.innerHeight - margin)) window.scrollBy(0, speed);
+  }
+
+  function findOverStep(clientX, clientY){
+    const el = document.elementFromPoint(clientX, clientY);
+    if (!el) return null;
+    const step = el.closest('.step');
+    if (!step) return null;
+    if (dragging && step === dragging.step) return null;
+    return step;
+  }
+
+  function placePlaceholder(overStep, clientY){
+    if (!dragging || !overStep) return;
+    const rect = overStep.getBoundingClientRect();
+    const before = (clientY - rect.top) < rect.height / 2;
+    const parent = overStep.parentNode;
+    if (!parent) return;
+    if (before) parent.insertBefore(dragging.placeholder, overStep);
+    else parent.insertBefore(dragging.placeholder, overStep.nextSibling);
+  }
+
+  function startDrag(step, clientX, clientY){
+    const rect = step.getBoundingClientRect();
+    const placeholder = createPlaceholder(rect.height);
+    const ghost = createGhost(step, rect);
+    document.body.appendChild(ghost);
+
+    // Replace original with placeholder; keep original hidden for later insert.
+    step.classList.add('dragging');
+    step.style.display = 'none';
+    step.parentNode.insertBefore(placeholder, step);
+
+    dragging = {
+      step,
+      ghost,
+      placeholder,
+      offsetX: clientX - rect.left,
+      offsetY: clientY - rect.top
+    };
+    setGhostPos(clientX, clientY);
+  }
+
+  function finishDrag(){
+    if (!dragging) return;
+    const { step, ghost, placeholder } = dragging;
+    step.style.display = '';
+    step.classList.remove('dragging');
+    placeholder.parentNode.insertBefore(step, placeholder);
+    placeholder.remove();
+    ghost.remove();
+    const parent = step.parentNode;
+    dragging = null;
+    if (parent) updateStepIndices(parent);
+  }
+
+  function onMove(clientX, clientY){
+    if (!dragging) return;
+    setGhostPos(clientX, clientY);
+    autoScroll(clientY);
+    const over = findOverStep(clientX, clientY);
+    if (over && over.parentNode === stepsEl){
+      placePlaceholder(over, clientY);
+    }
+  }
+
+  function bindPointer(pointerId){
+    function move(e){
+      if (pointerId != null && e.pointerId !== pointerId) return;
+      onMove(e.clientX, e.clientY);
+    }
+    function up(e){
+      if (pointerId != null && e.pointerId !== pointerId) return;
+      window.removeEventListener('pointermove', move, { passive:false });
+      window.removeEventListener('pointerup', up, { passive:false });
+      window.removeEventListener('pointercancel', up, { passive:false });
+      finishDrag();
+    }
+    window.addEventListener('pointermove', move, { passive:false });
+    window.addEventListener('pointerup', up, { passive:false });
+    window.addEventListener('pointercancel', up, { passive:false });
+  }
+
+  // Pointer events (iOS/Android/desktop)
+  stepsEl.addEventListener('pointerdown', (e) => {
+    const handle = e.target.closest('.dragHandle');
+    if (!handle) return;
+    const step = handle.closest('.step');
+    if (!step) return;
+    e.preventDefault();
+    e.stopPropagation();
+    startDrag(step, e.clientX, e.clientY);
+    bindPointer(e.pointerId);
+  }, { passive:false });
+}
+
+function enableHelp(){
+  const helpBtn = document.getElementById('helpBtn');
+  const overlay = document.getElementById('helpOverlay');
+  const closeBtn = document.getElementById('helpCloseBtn');
+  if (!helpBtn || !overlay) return;
+
+  function open(){
+    overlay.classList.add('open');
+  }
+  function close(){
+    overlay.classList.remove('open');
+  }
+
+  helpBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    open();
+  });
+
+  if (closeBtn){
+    closeBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      close();
+    });
+  }
+
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) close();
+  });
+
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') close();
+  });
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  enableCollapse();
+  enableReorderButtons();
+  enableHelp();
+  // Standard: ausgeklappt
+  setAllCollapsed(false);
+  document.querySelectorAll('.steps').forEach((stepsEl) => enablePointerReorder(stepsEl));
+});
+
+</script>
+</head>
+<body>
+<div class="toolbar">
+<div class="toolbarInner">
+<div class="toolbarLeft">
+<label class="toggle" title="Kompaktmodus (zum Sortieren)"><input id="compactToggle" type="checkbox"/><span class="toggleIcon">&#9776;</span></label>
+</div>
+<div class="toolbarRight">
+<button class="btn iconBtn helpBtn" id="helpBtn" type="button" title="Hilfe" aria-label="Hilfe">?</button>
+<button class="btn iconBtn" id="collapseAllBtn" type="button" title="Alles einklappen" aria-label="Alles einklappen">&#x25BE;</button>
+<button class="btn iconBtn" id="expandAllBtn" type="button" title="Alles ausklappen" aria-label="Alles ausklappen">&#x25B4;</button>
+</div>
+</div>
+</div>
+<div class="helpOverlay" id="helpOverlay" role="dialog" aria-modal="true" aria-label="Hilfe">
+<div class="helpModal">
+<div class="helpHead">
+<div class="helpTitle">Hilfe</div>
+<button class="btn iconBtn helpCloseX" id="helpCloseBtn" type="button" title="Schliessen" aria-label="Schliessen">&#x2715;</button>
+</div>
+<div class="helpBody">
+<p>Dieser Report zeigt die Cue-Sequenz so, wie sie in Probenhilfe angezeigt und sortiert wurde.</p>
+<h3>Ansicht / Einklappen</h3>
+<ul>
+<li><span class="kbd">☰</span> Kompaktmodus: alle Cues sind eingeklappt (gut zum Sortieren).</li>
+<li><span class="kbd">▾</span> Alles einklappen.</li>
+<li><span class="kbd">▴</span> Alles ausklappen.</li>
+<li>Tippe auf einen Cue-Kopf, um genau diesen Cue ein- oder auszuklappen.</li>
+</ul>
+<h3>Sortieren (mobil)</h3>
+<ul>
+<li>Zum Verschieben: am <span class="kbd">≡</span>-Griff ziehen (nicht irgendwo im Text).</li>
+<li>Wenn es sehr weit gehen soll: im Kompaktmodus die <span class="kbd">↑</span>/<span class="kbd">↓</span>-Buttons nutzen.</li>
+</ul>
+<h3>Farben</h3>
+<ul>
+<li>Gruen/Blau: bringt auf Ziel oder bleibt richtig.</li>
+<li>Rot: wuerde weg vom Ziel bewegen / Sperren relevant.</li>
+<li>Gelb im Status: vor diesem Cue entsperren.</li>
+</ul>
+<h3>In eine Mail schicken</h3>
+<ul>
+<li>Die HTML-Datei als Anhang zur Mail hinzufuegen (Report liegt im Temp-Ordner).</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="wrap">
+<div class="header">
+<div>
+<div class="title">Probenhilfe - Cue-Sequenz</div>
+<div class="subtitle">Sprung: AQ 13 - DYWBA Snowman (CLEAR) → AQ 29.7 - Coro 1 IN (AQ GO)</div>
+</div>
+<div class="meta">Export: 2026-01-18 16:30:25<br/><span class="muted">Quelle: Probenhilfe</span></div>
+</div>
+<div class="legend">
+<div class="chip"><span class="dot bring"></span>Bringt auf Ziel</div>
+<div class="chip"><span class="dot ok"></span>Bleibt richtig</div>
+<div class="chip"><span class="dot warn"></span>Wuerde weg vom Ziel bewegen / Sperren</div>
+<div class="chip"><span class="dot neutral"></span>Sonstiges / Keine Bewegung</div>
+<div class="chip"><span class="dot" style="background:var(--notice)"></span>Vor diesem Cue entsperren</div>
+</div>
+<section class="section">
+<div class="sectionHead">
+<div class="sectionTitle">Empfohlene Cue-Sequenz f&#252;r den Sprung von AQ 13 - DYWBA Snowman (CLEAR) nach AQ 29.7 - Coro 1 IN (AQ GO)</div>
+<div class="sectionSummary">Deckt 19 von 19 ben&#246;tigten Achsen ab.</div>
+</div>
+<div class="steps">
+<div class="step">
+<div class="stepHead">
+<div class="stepLeft">
+<div class="dragHandle" title="Verschieben">≡</div>
+<div class="stepIndex">1</div>
+<div class="stepTitle">Vorw&#228;rts 319: Preset 1.6 - Castle Chapel</div>
+</div>
+<div class="badges">
+<div class="reorderBtns">
+<button class="miniBtn" type="button" data-move="up" title="Nach oben">&#x2191;</button>
+<button class="miniBtn" type="button" data-move="down" title="Nach unten">&#x2193;</button>
+</div>
+<span class="badge">Bringt auf Ziel: 7</span>
+</div>
+</div>
+<div class="stepBody open">
+<div class="tableWrap">
+<table>
+<thead><tr>
+<th>Achse</th>
+<th class="mono">Sprung-Start</th>
+<th class="mono">Sprung-Ziel</th>
+<th>Status</th>
+</tr></thead>
+<tbody>
+<tr class="row bring">
+<td>Lichtleiter 2 SL <span class="muted">(LL2SL)</span></td>
+<td class="mono">2920</td>
+<td class="mono">3620</td>
+<td><span class="status">Achse muss von 2920 nach 3620 fahren.</span></td>
+</tr>
+<tr class="row bring">
+<td>Lichtleiter 2 SR <span class="muted">(LL2SR)</span></td>
+<td class="mono">2920</td>
+<td class="mono">3620</td>
+<td><span class="status">Achse muss von 2920 nach 3620 fahren.</span></td>
+</tr>
+<tr class="row bring">
+<td>Lichtleiter 3 SL <span class="muted">(LL3SL)</span></td>
+<td class="mono">2785</td>
+<td class="mono">1165</td>
+<td><span class="status">Achse muss von 2785 nach 1165 fahren.</span></td>
+</tr>
+<tr class="row bring">
+<td>Lichtleiter 3 SR <span class="muted">(LL3SR)</span></td>
+<td class="mono">2785</td>
+<td class="mono">1165</td>
+<td><span class="status">Achse muss von 2785 nach 1165 fahren.</span></td>
+</tr>
+<tr class="row bring">
+<td>Lichtleiter 5 SL <span class="muted">(LL5SL)</span></td>
+<td class="mono">1165</td>
+<td class="mono">3485</td>
+<td><span class="status">Achse muss von 1165 nach 3485 fahren.</span></td>
+</tr>
+<tr class="row bring">
+<td>Lichtleiter 5 SR <span class="muted">(LL5SR)</span></td>
+<td class="mono">1165</td>
+<td class="mono">3485</td>
+<td><span class="status">Achse muss von 1165 nach 3485 fahren.</span></td>
+</tr>
+<tr class="row bring">
+<td>LX 5 <span class="muted">(LX 5)</span></td>
+<td class="mono">7361</td>
+<td class="mono">7165</td>
+<td><span class="status">Achse muss von 7361 nach 7165 fahren.</span></td>
+</tr>
+<tr class="row ok">
+<td>Lichtleiter 1 SL <span class="muted">(LL1SL)</span></td>
+<td class="mono">1165</td>
+<td class="mono">1165</td>
+<td><span class="status">Achse bleibt in diesem Cue auf 1165.</span></td>
+</tr>
+<tr class="row ok">
+<td>Lichtleiter 1 SR <span class="muted">(LL1SR)</span></td>
+<td class="mono">1165</td>
+<td class="mono">1165</td>
+<td><span class="status">Achse bleibt in diesem Cue auf 1165.</span></td>
+</tr>
+<tr class="row ok">
+<td>Lichtleiter 4 SL <span class="muted">(LL4SL)</span></td>
+<td class="mono">2920</td>
+<td class="mono">2920</td>
+<td><span class="status">Achse bleibt in diesem Cue auf 2920.</span></td>
+</tr>
+<tr class="row ok">
+<td>Lichtleiter 4 SR <span class="muted">(LL4SR)</span></td>
+<td class="mono">2920</td>
+<td class="mono">2920</td>
+<td><span class="status">Achse bleibt in diesem Cue auf 2920.</span></td>
+</tr>
+<tr class="row ok">
+<td>Lichtleiter 6 SL <span class="muted">(LL6SL)</span></td>
+<td class="mono">5125</td>
+<td class="mono">5125</td>
+<td><span class="status">Achse bleibt in diesem Cue auf 5125.</span></td>
+</tr>
+<tr class="row ok">
+<td>Lichtleiter 6 SR <span class="muted">(LL6SR)</span></td>
+<td class="mono">5125</td>
+<td class="mono">5125</td>
+<td><span class="status">Achse bleibt in diesem Cue auf 5125.</span></td>
+</tr>
+<tr class="row ok">
+<td>LX 3 <span class="muted">(LX 3)</span></td>
+<td class="mono">10615</td>
+<td class="mono">10615</td>
+<td><span class="status">Achse bleibt in diesem Cue auf 10615.</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="step">
+<div class="stepHead">
+<div class="stepLeft">
+<div class="dragHandle" title="Verschieben">≡</div>
+<div class="stepIndex">2</div>
+<div class="stepTitle">Vorw&#228;rts 89: AQ 15 - Shipwreck           LX 72 (1 Sperre)</div>
+</div>
+<div class="badges">
+<div class="reorderBtns">
+<button class="miniBtn" type="button" data-move="up" title="Nach oben">&#x2191;</button>
+<button class="miniBtn" type="button" data-move="down" title="Nach unten">&#x2193;</button>
+</div>
+<span class="badge warn">Sperren: 1</span>
+<span class="badge">Bringt auf Ziel: 5</span>
+</div>
+</div>
+<div class="stepBody open">
+<div class="tableWrap">
+<table>
+<thead><tr>
+<th>Achse</th>
+<th class="mono">Sprung-Start</th>
+<th class="mono">Sprung-Ziel</th>
+<th>Status</th>
+</tr></thead>
+<tbody>
+<tr class="row warn">
+<td>IceWalls4 <span class="muted">(IWall4)</span></td>
+<td class="mono">6463</td>
+<td class="mono">6463</td>
+<td><span class="status">In diesem Vorschlag wird die Achse gesperrt. Cue w&#252;rde sie sonst von 6463 nach 6382 fahren (Sprung-Ziel 6463).</span></td>
+</tr>
+<tr class="row bring">
+<td>[AWall]  Arendelle Wall / <span class="muted">(AWinDS)</span></td>
+<td class="mono">0</td>
+<td class="mono">9440</td>
+<td><span class="status">Achse muss von 0 nach 9440 fahren.</span></td>
+</tr>
+<tr class="row bring">
+<td>[AWall]  Arendelle Wall / <span class="muted">(AWinUS)</span></td>
+<td class="mono">0</td>
+<td class="mono">9440</td>
+<td><span class="status">Achse muss von 0 nach 9440 fahren.</span></td>
+</tr>
+<tr class="row bring">
+<td>Arendel Portal 1 Travelle <span class="muted">(AP1 Tr)</span></td>
+<td class="mono">2440</td>
+<td class="mono">4400</td>
+<td><span class="status">Achse muss von 2440 nach 4400 fahren.</span></td>
+</tr>
+<tr class="row bring">
+<td>Arendel Portal 2 Travelle <span class="muted">(AP2 Tr)</span></td>
+<td class="mono">1300</td>
+<td class="mono">4035</td>
+<td><span class="status">Achse muss von 1300 nach 4035 fahren.</span></td>
+</tr>
+<tr class="row bring">
+<td>ArendelleDoor <span class="muted">(ADoor)</span></td>
+<td class="mono">0</td>
+<td class="mono">8700</td>
+<td><span class="status">Achse muss von 0 nach 8700 fahren.</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="step">
+<div class="stepHead">
+<div class="stepLeft">
+<div class="dragHandle" title="Verschieben">≡</div>
+<div class="stepIndex">3</div>
+<div class="stepTitle">R&#252;ckw&#228;rts 122: AQ 36 - Tracks ON Torchieres</div>
+</div>
+<div class="badges">
+<div class="reorderBtns">
+<button class="miniBtn" type="button" data-move="up" title="Nach oben">&#x2191;</button>
+<button class="miniBtn" type="button" data-move="down" title="Nach unten">&#x2193;</button>
+</div>
+<span class="badge">Bringt auf Ziel: 3</span>
+</div>
+</div>
+<div class="stepBody open">
+<div class="tableWrap">
+<table>
+<thead><tr>
+<th>Achse</th>
+<th class="mono">Sprung-Start</th>
+<th class="mono">Sprung-Ziel</th>
+<th>Status</th>
+</tr></thead>
+<tbody>
+<tr class="row bring">
+<td>Chandelier <span class="muted">(Chande)</span></td>
+<td class="mono">11600</td>
+<td class="mono">7804</td>
+<td><span class="status">Achse muss von 11600 nach 7804 fahren.</span></td>
+</tr>
+<tr class="row bring">
+<td>Track 3 <span class="muted">(Track3)</span></td>
+<td class="mono">9800</td>
+<td class="mono">10445</td>
+<td><span class="status">Achse muss von 9800 nach 10445 fahren.</span></td>
+</tr>
+<tr class="row bring">
+<td>Track 4 <span class="muted">(Track4)</span></td>
+<td class="mono">-10570</td>
+<td class="mono">-10445</td>
+<td><span class="status">Achse muss von -10570 nach -10445 fahren.</span></td>
+</tr>
+<tr class="row ok">
+<td>Track 7 <span class="muted">(Track7)</span></td>
+<td class="mono">10445</td>
+<td class="mono">10445</td>
+<td><span class="status">Achse bleibt in diesem Cue auf 10445.</span></td>
+</tr>
+<tr class="row ok">
+<td>Track 8 <span class="muted">(Track8)</span></td>
+<td class="mono">-10445</td>
+<td class="mono">-10445</td>
+<td><span class="status">Achse bleibt in diesem Cue auf -10445.</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="step">
+<div class="stepHead">
+<div class="stepLeft">
+<div class="dragHandle" title="Verschieben">≡</div>
+<div class="stepIndex">4</div>
+<div class="stepTitle">Vorw&#228;rts 34: CQ 27 - Coro 1+2 IN</div>
+</div>
+<div class="badges">
+<div class="reorderBtns">
+<button class="miniBtn" type="button" data-move="up" title="Nach oben">&#x2191;</button>
+<button class="miniBtn" type="button" data-move="down" title="Nach unten">&#x2193;</button>
+</div>
+<span class="badge">Bringt auf Ziel: 2</span>
+</div>
+</div>
+<div class="stepBody open">
+<div class="tableWrap">
+<table>
+<thead><tr>
+<th>Achse</th>
+<th class="mono">Sprung-Start</th>
+<th class="mono">Sprung-Ziel</th>
+<th>Status</th>
+</tr></thead>
+<tbody>
+<tr class="row bring">
+<td>Coronation Hanger 1 <span class="muted">(Coro H 1)</span></td>
+<td class="mono">12000</td>
+<td class="mono">3350</td>
+<td><span class="status">Achse muss von 12000 nach 3350 fahren.</span></td>
+</tr>
+<tr class="row bring">
+<td>Coronation Hanger 2 <span class="muted">(Coro H 2)</span></td>
+<td class="mono">11900</td>
+<td class="mono">3350</td>
+<td><span class="status">Achse muss von 11900 nach 3350 fahren.</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="step">
+<div class="stepHead">
+<div class="stepLeft">
+<div class="dragHandle" title="Verschieben">≡</div>
+<div class="stepIndex">5</div>
+<div class="stepTitle">Vorw&#228;rts 104: AQ 28 - Track 1 ON (FL)</div>
+</div>
+<div class="badges">
+<div class="reorderBtns">
+<button class="miniBtn" type="button" data-move="up" title="Nach oben">&#x2191;</button>
+<button class="miniBtn" type="button" data-move="down" title="Nach unten">&#x2193;</button>
+</div>
+<span class="badge">Bringt auf Ziel: 1</span>
+</div>
+</div>
+<div class="stepBody open">
+<div class="tableWrap">
+<table>
+<thead><tr>
+<th>Achse</th>
+<th class="mono">Sprung-Start</th>
+<th class="mono">Sprung-Ziel</th>
+<th>Status</th>
+</tr></thead>
+<tbody>
+<tr class="row bring">
+<td>Track 1 <span class="muted">(Track1)</span></td>
+<td class="mono">11700</td>
+<td class="mono">9988</td>
+<td><span class="status">Achse muss von 11700 nach 9988 fahren.</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="step">
+<div class="stepHead">
+<div class="stepLeft">
+<div class="dragHandle" title="Verschieben">≡</div>
+<div class="stepIndex">6</div>
+<div class="stepTitle">Vorw&#228;rts 91: AQ 17 - Gates IN (SM)</div>
+</div>
+<div class="badges">
+<div class="reorderBtns">
+<button class="miniBtn" type="button" data-move="up" title="Nach oben">&#x2191;</button>
+<button class="miniBtn" type="button" data-move="down" title="Nach unten">&#x2193;</button>
+</div>
+<span class="badge">Bringt auf Ziel: 1</span>
+</div>
+</div>
+<div class="stepBody open">
+<div class="tableWrap">
+<table>
+<thead><tr>
+<th>Achse</th>
+<th class="mono">Sprung-Start</th>
+<th class="mono">Sprung-Ziel</th>
+<th>Status</th>
+</tr></thead>
+<tbody>
+<tr class="row bring">
+<td>Gates/USWall <span class="muted">(USWall)</span></td>
+<td class="mono">8700</td>
+<td class="mono">0</td>
+<td><span class="status">Achse muss von 8700 nach 0 fahren.</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+</section>
+</div>
+</body>
+</html>
