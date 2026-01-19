@@ -373,9 +373,40 @@ body.compact .reorderBtns{display:flex}
 }
 .stepTitle{
   font-weight:650;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-width:0;
+  flex-wrap:nowrap;
+}
+.stepTitle .cueText{
+  min-width:0;
   white-space:nowrap;
   overflow:hidden;
   text-overflow:ellipsis;
+}
+.dirBadge{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:3px 8px;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:800;
+  letter-spacing:.2px;
+  border:1px solid rgba(255,255,255,.14);
+  background:rgba(255,255,255,.05);
+  flex:0 0 auto;
+}
+.dirForward{
+  border-color:rgba(25,118,210,.65);
+  background:rgba(25,118,210,.18);
+  color:#dbeafe;
+}
+.dirBackward{
+  border-color:rgba(211,47,47,.75);
+  background:rgba(211,47,47,.20);
+  color:#ffe4e6;
 }
 .badges{
   display:flex;
@@ -445,7 +476,8 @@ tbody tr:last-child td{border-bottom:none}
   .meta{text-align:left;}
   .sectionHead{flex-direction:column; align-items:flex-start;}
   .stepHead{flex-direction:column; align-items:flex-start;}
-  .stepTitle{white-space:normal}
+  .stepTitle{flex-wrap:wrap}
+  .stepTitle .cueText{white-space:normal}
   .badges{justify-content:flex-start;}
   thead th, tbody td{padding:8px 8px;}
   table{font-size:12px;}
@@ -824,7 +856,7 @@ window.addEventListener('DOMContentLoaded', () => {
 <div class="title">Probenhilfe - Cue-Sequenz</div>
 <div class="subtitle">Sprung: AQ 29.7 - Coro 1 IN (AQ GO) → AQ 28 - Track 1 ON (FL)</div>
 </div>
-<div class="meta">Export: 2026-01-19 10:38:39<br/><span class="muted">Quelle: Probenhilfe</span></div>
+<div class="meta">Export: 2026-01-19 10:46:27<br/><span class="muted">Quelle: Probenhilfe</span></div>
 </div>
 <div class="legend">
 <div class="chip"><span class="dot bring"></span>Bringt auf Ziel</div>
@@ -844,7 +876,10 @@ window.addEventListener('DOMContentLoaded', () => {
 <div class="stepLeft">
 <div class="dragHandle" title="Verschieben">≡</div>
 <div class="stepIndex">1</div>
-<div class="stepTitle">R&#252;ckw&#228;rts 105: AQ 29 - Great Hall         LX 117</div>
+<div class="stepTitle">
+<span class="dirBadge dirBackward">R&#252;ckw&#228;rts 105</span>
+<span class="cueText">AQ 29 - Great Hall         LX 117</span>
+</div>
 </div>
 <div class="badges">
 <div class="reorderBtns">
@@ -898,7 +933,10 @@ window.addEventListener('DOMContentLoaded', () => {
 <div class="stepLeft">
 <div class="dragHandle" title="Verschieben">≡</div>
 <div class="stepIndex">2</div>
-<div class="stepTitle">Vorw&#228;rts 58: Preset 9 - Chandelier Doppelshow Pre</div>
+<div class="stepTitle">
+<span class="dirBadge dirForward">Vorw&#228;rts 58</span>
+<span class="cueText">Preset 9 - Chandelier Doppelshow Pre</span>
+</div>
 </div>
 <div class="badges">
 <div class="reorderBtns">
