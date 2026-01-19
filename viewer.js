@@ -488,6 +488,30 @@
     }
   }
 
+  function reorderAxisRows(stepEl) {
+    const tbody = stepEl?.querySelector?.('tbody');
+    if (!tbody) return;
+    const rows = Array.from(tbody.querySelectorAll('tr[data-axisid]'));
+    if (rows.length <= 1) return;
+
+    function groupRank(tr) {
+      if (tr.classList.contains('warn')) return 0;
+      if (tr.classList.contains('bring')) return 1;
+      if (tr.classList.contains('ok')) return 2;
+      return 3;
+    }
+
+    rows.sort((a, b) => {
+      const ga = groupRank(a);
+      const gb = groupRank(b);
+      if (ga !== gb) return ga - gb;
+      const axisA = parseInt(a.dataset.axisid || '', 10);
+      const axisB = parseInt(b.dataset.axisid || '', 10);
+      return (axisSortOrder(axisA) - axisSortOrder(axisB)) || (axisA - axisB);
+    });
+    rows.forEach(r => tbody.appendChild(r));
+  }
+
   function recomputeSection(section, model, maxBlocksPerCue) {
     if (!section || !model) return;
 
@@ -573,6 +597,7 @@
             : (target != null ? `Auf Position ${target}` : ''),
           (start != null && target != null && start === target) ? 'KeineBewegung' : 'BringtAufZiel'
         );
+        reorderAxisRows(stepEl);
         if (target != null) positions[axisKey] = target;
         if (needsUnblock) blockedEarlier.delete(axisId);
         continue;
@@ -659,6 +684,7 @@
       setBadge(stepEl, 'affected', uniqueAffected.length ? `Fährt: ${uniqueAffected.length}` : '');
 
       uniqueToBlock.forEach(a => blockedEarlier.add(a));
+      reorderAxisRows(stepEl);
     }
   }
 
