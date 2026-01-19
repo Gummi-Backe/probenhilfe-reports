@@ -24,6 +24,7 @@ body{
   color:var(--text);
   font-family:Segoe UI,system-ui,-apple-system,Arial,sans-serif;
   line-height:1.35;
+  font-size:14px;
 }
 
 .toolbar{
@@ -135,6 +136,7 @@ body{
   border:1px solid rgba(255,255,255,.08);
   border-radius:14px;
   overflow:hidden;
+  font-size:13px;
 }
 .stepHead{
   display:flex;
@@ -212,7 +214,7 @@ body.compact .reorderBtns{display:flex}
 
 .disabledNote{padding:10px; color:var(--muted)}
 .tableWrap{overflow-x:auto; padding:0 10px 10px}
-table{width:100%; border-collapse:separate; border-spacing:0; min-width:520px}
+table{width:100%; border-collapse:separate; border-spacing:0; min-width:520px; font-size:13px}
 th,td{padding:8px 10px; border-bottom:1px solid rgba(255,255,255,.06); vertical-align:top}
 th{color:var(--muted); font-weight:700; text-align:left; font-size:12px}
 .mono{font-variant-numeric:tabular-nums; font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace}
