@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": 1768831209,
+  "updatedAt": 1768831818,
   "axes": [
     {
       "axisId": 25,
@@ -24,7 +24,7 @@
       "longName": "CrystalcurtainDS",
       "sortOrder": 30,
       "enabled": true,
-      "colorHex": "#FF7AD0FA"
+      "colorHex": "#7AD0FA"
     },
     {
       "axisId": 14,
@@ -40,7 +40,7 @@
       "longName": "IcePalaceHanger1",
       "sortOrder": 50,
       "enabled": true,
-      "colorHex": "#FF7AD0FA"
+      "colorHex": "#7AD0FA"
     },
     {
       "axisId": 5,
@@ -48,7 +48,7 @@
       "longName": "Ice Wall 1",
       "sortOrder": 60,
       "enabled": true,
-      "colorHex": "#FF6672FF"
+      "colorHex": "#6672FF"
     },
     {
       "axisId": 52,
@@ -56,7 +56,7 @@
       "longName": "Coronation Hanger 1",
       "sortOrder": 70,
       "enabled": true,
-      "colorHex": "#FFAEAE00"
+      "colorHex": "#AEAE00"
     },
     {
       "axisId": 3,
@@ -80,7 +80,7 @@
       "longName": "Ice Wall 2",
       "sortOrder": 100,
       "enabled": true,
-      "colorHex": "#FF6672FF"
+      "colorHex": "#6672FF"
     },
     {
       "axisId": 30,
@@ -88,7 +88,7 @@
       "longName": "Wisteria Garden 1",
       "sortOrder": 110,
       "enabled": true,
-      "colorHex": "#FFFF9DA7"
+      "colorHex": "#FF9DA7"
     },
     {
       "axisId": 18,
@@ -104,7 +104,7 @@
       "longName": "CrystalCurtain MS",
       "sortOrder": 130,
       "enabled": true,
-      "colorHex": "#FF7AD0FA"
+      "colorHex": "#7AD0FA"
     },
     {
       "axisId": 37,
@@ -112,7 +112,7 @@
       "longName": "LX 3",
       "sortOrder": 140,
       "enabled": true,
-      "colorHex": "#FFEF56C9"
+      "colorHex": "#EF56C9"
     },
     {
       "axisId": 24,
@@ -120,7 +120,7 @@
       "longName": "IcePalaceHanger2",
       "sortOrder": 150,
       "enabled": true,
-      "colorHex": "#FF7AD0FA"
+      "colorHex": "#7AD0FA"
     },
     {
       "axisId": 23,
@@ -128,7 +128,7 @@
       "longName": "Ice Wall 3",
       "sortOrder": 160,
       "enabled": true,
-      "colorHex": "#FF6672FF"
+      "colorHex": "#6672FF"
     },
     {
       "axisId": 53,
@@ -136,7 +136,7 @@
       "longName": "Coronation Hanger 2",
       "sortOrder": 170,
       "enabled": true,
-      "colorHex": "#FFAEAE00"
+      "colorHex": "#AEAE00"
     },
     {
       "axisId": 54,
@@ -144,7 +144,7 @@
       "longName": "Chandelier",
       "sortOrder": 180,
       "enabled": true,
-      "colorHex": "#FFAEAE00"
+      "colorHex": "#AEAE00"
     },
     {
       "axisId": 16,
@@ -160,7 +160,7 @@
       "longName": "IceWalls4",
       "sortOrder": 200,
       "enabled": true,
-      "colorHex": "#FF6672FF"
+      "colorHex": "#6672FF"
     },
     {
       "axisId": 22,
@@ -168,7 +168,7 @@
       "longName": "Wisteria Garden 2",
       "sortOrder": 210,
       "enabled": true,
-      "colorHex": "#FFFF9DA7"
+      "colorHex": "#FF9DA7"
     },
     {
       "axisId": 34,
@@ -176,7 +176,7 @@
       "longName": "LX 5",
       "sortOrder": 220,
       "enabled": true,
-      "colorHex": "#FFEF56C9"
+      "colorHex": "#EF56C9"
     },
     {
       "axisId": 35,
@@ -192,7 +192,7 @@
       "longName": "[Apo1]  Arendelle Portal",
       "sortOrder": 240,
       "enabled": true,
-      "colorHex": "#FFA346FF"
+      "colorHex": "#A346FF"
     },
     {
       "axisId": 9,
@@ -200,7 +200,7 @@
       "longName": "[Apo1]  Arendelle Portal",
       "sortOrder": 250,
       "enabled": true,
-      "colorHex": "#FFA346FF"
+      "colorHex": "#A346FF"
     },
     {
       "axisId": 63,
@@ -208,7 +208,7 @@
       "longName": "Arendel Portal 1 Travelle",
       "sortOrder": 260,
       "enabled": true,
-      "colorHex": "#FFA346FF"
+      "colorHex": "#A346FF"
     },
     {
       "axisId": 36,
@@ -216,7 +216,7 @@
       "longName": "[AWall]  Arendelle Wall /",
       "sortOrder": 270,
       "enabled": true,
-      "colorHex": "#FFFFFF00"
+      "colorHex": "#FFFF00"
     },
     {
       "axisId": 17,
@@ -224,7 +224,7 @@
       "longName": "[AWall]  Arendelle Wall /",
       "sortOrder": 280,
       "enabled": true,
-      "colorHex": "#FFFFFF00"
+      "colorHex": "#FFFF00"
     },
     {
       "axisId": 92,
@@ -232,7 +232,7 @@
       "longName": "Window SL",
       "sortOrder": 290,
       "enabled": true,
-      "colorHex": "#FFFFFF00"
+      "colorHex": "#FFFF00"
     },
     {
       "axisId": 91,
@@ -240,7 +240,7 @@
       "longName": "Window SR",
       "sortOrder": 300,
       "enabled": true,
-      "colorHex": "#FFFFFF00"
+      "colorHex": "#FFFF00"
     },
     {
       "axisId": 93,
@@ -248,7 +248,7 @@
       "longName": "Shutter 1 SL",
       "sortOrder": 310,
       "enabled": true,
-      "colorHex": "#FFFFFF00"
+      "colorHex": "#FFFF00"
     },
     {
       "axisId": 94,
@@ -256,7 +256,7 @@
       "longName": "Shutter 2 Center",
       "sortOrder": 320,
       "enabled": true,
-      "colorHex": "#FFFFFF00"
+      "colorHex": "#FFFF00"
     },
     {
       "axisId": 95,
@@ -264,7 +264,7 @@
       "longName": "Shutter 3 SR",
       "sortOrder": 330,
       "enabled": true,
-      "colorHex": "#FFFFFF00"
+      "colorHex": "#FFFF00"
     },
     {
       "axisId": 10,
@@ -272,7 +272,7 @@
       "longName": "[APort2]  Arendelle Portal",
       "sortOrder": 340,
       "enabled": true,
-      "colorHex": "#FFA346FF"
+      "colorHex": "#A346FF"
     },
     {
       "axisId": 15,
@@ -280,7 +280,7 @@
       "longName": "[APort2]  Arendelle Portal",
       "sortOrder": 350,
       "enabled": true,
-      "colorHex": "#FFA346FF"
+      "colorHex": "#A346FF"
     },
     {
       "axisId": 64,
@@ -288,7 +288,7 @@
       "longName": "Arendel Portal 2 Travelle",
       "sortOrder": 360,
       "enabled": true,
-      "colorHex": "#FFA346FF"
+      "colorHex": "#A346FF"
     },
     {
       "axisId": 38,
@@ -296,7 +296,7 @@
       "longName": "Lichtleiter 1 SL",
       "sortOrder": 370,
       "enabled": true,
-      "colorHex": "#FF00FF00"
+      "colorHex": "#00FF00"
     },
     {
       "axisId": 40,
@@ -304,7 +304,7 @@
       "longName": "Lichtleiter 2 SL",
       "sortOrder": 380,
       "enabled": true,
-      "colorHex": "#FF00FF00"
+      "colorHex": "#00FF00"
     },
     {
       "axisId": 42,
@@ -312,7 +312,7 @@
       "longName": "Lichtleiter 3 SL",
       "sortOrder": 390,
       "enabled": true,
-      "colorHex": "#FF00FF00"
+      "colorHex": "#00FF00"
     },
     {
       "axisId": 44,
@@ -320,7 +320,7 @@
       "longName": "Lichtleiter 4 SL",
       "sortOrder": 400,
       "enabled": true,
-      "colorHex": "#FF00FF00"
+      "colorHex": "#00FF00"
     },
     {
       "axisId": 46,
@@ -328,7 +328,7 @@
       "longName": "Lichtleiter 5 SL",
       "sortOrder": 410,
       "enabled": true,
-      "colorHex": "#FF00FF00"
+      "colorHex": "#00FF00"
     },
     {
       "axisId": 48,
@@ -336,7 +336,7 @@
       "longName": "Lichtleiter 6 SL",
       "sortOrder": 420,
       "enabled": true,
-      "colorHex": "#FF00FF00"
+      "colorHex": "#00FF00"
     },
     {
       "axisId": 39,
@@ -344,7 +344,7 @@
       "longName": "Lichtleiter 1 SR",
       "sortOrder": 430,
       "enabled": true,
-      "colorHex": "#FF00BF00"
+      "colorHex": "#00BF00"
     },
     {
       "axisId": 41,
@@ -352,7 +352,7 @@
       "longName": "Lichtleiter 2 SR",
       "sortOrder": 440,
       "enabled": true,
-      "colorHex": "#FF00BF00"
+      "colorHex": "#00BF00"
     },
     {
       "axisId": 43,
@@ -360,7 +360,7 @@
       "longName": "Lichtleiter 3 SR",
       "sortOrder": 450,
       "enabled": true,
-      "colorHex": "#FF00BF00"
+      "colorHex": "#00BF00"
     },
     {
       "axisId": 45,
@@ -368,7 +368,7 @@
       "longName": "Lichtleiter 4 SR",
       "sortOrder": 460,
       "enabled": true,
-      "colorHex": "#FF00BF00"
+      "colorHex": "#00BF00"
     },
     {
       "axisId": 47,
@@ -376,7 +376,7 @@
       "longName": "Lichtleiter 5 SR",
       "sortOrder": 470,
       "enabled": true,
-      "colorHex": "#FF00BF00"
+      "colorHex": "#00BF00"
     },
     {
       "axisId": 49,
@@ -384,7 +384,7 @@
       "longName": "Lichtleiter 6 SR",
       "sortOrder": 480,
       "enabled": true,
-      "colorHex": "#FF00BF00"
+      "colorHex": "#00BF00"
     },
     {
       "axisId": 55,
@@ -480,7 +480,7 @@
       "longName": "Umbrella \u0026 Surfboard",
       "sortOrder": 600,
       "enabled": true,
-      "colorHex": "#FFFF7648"
+      "colorHex": "#FF7648"
     },
     {
       "axisId": 65,
@@ -488,7 +488,7 @@
       "longName": "Summer Flipper",
       "sortOrder": 610,
       "enabled": true,
-      "colorHex": "#FFFFA317"
+      "colorHex": "#FFA317"
     },
     {
       "axisId": 66,
@@ -496,7 +496,7 @@
       "longName": "Items 1",
       "sortOrder": 620,
       "enabled": true,
-      "colorHex": "#FFFFA317"
+      "colorHex": "#FFA317"
     },
     {
       "axisId": 96,
@@ -504,7 +504,7 @@
       "longName": "Items 2",
       "sortOrder": 630,
       "enabled": true,
-      "colorHex": "#FFFFA317"
+      "colorHex": "#FFA317"
     },
     {
       "axisId": 69,
@@ -512,7 +512,7 @@
       "longName": "Shell1",
       "sortOrder": 640,
       "enabled": true,
-      "colorHex": "#FF24FF97"
+      "colorHex": "#24FF97"
     },
     {
       "axisId": 70,
@@ -520,7 +520,7 @@
       "longName": "Shell2",
       "sortOrder": 650,
       "enabled": true,
-      "colorHex": "#FF24FF97"
+      "colorHex": "#24FF97"
     },
     {
       "axisId": 71,
@@ -528,7 +528,7 @@
       "longName": "Shell3",
       "sortOrder": 660,
       "enabled": true,
-      "colorHex": "#FF24FF97"
+      "colorHex": "#24FF97"
     },
     {
       "axisId": 72,
@@ -536,7 +536,7 @@
       "longName": "Shell4",
       "sortOrder": 670,
       "enabled": true,
-      "colorHex": "#FF24FF97"
+      "colorHex": "#24FF97"
     },
     {
       "axisId": 73,
@@ -544,7 +544,7 @@
       "longName": "Shell5",
       "sortOrder": 680,
       "enabled": true,
-      "colorHex": "#FF24FF97"
+      "colorHex": "#24FF97"
     },
     {
       "axisId": 74,
@@ -552,7 +552,7 @@
       "longName": "Shell6",
       "sortOrder": 690,
       "enabled": true,
-      "colorHex": "#FF24FF97"
+      "colorHex": "#24FF97"
     },
     {
       "axisId": 75,
@@ -560,7 +560,7 @@
       "longName": "Shell7",
       "sortOrder": 700,
       "enabled": true,
-      "colorHex": "#FF24FF97"
+      "colorHex": "#24FF97"
     },
     {
       "axisId": 85,
@@ -568,7 +568,7 @@
       "longName": "Ice Legs Traveller 1 SL",
       "sortOrder": 710,
       "enabled": true,
-      "colorHex": "#FF41A3F3"
+      "colorHex": "#41A3F3"
     },
     {
       "axisId": 87,
@@ -576,7 +576,7 @@
       "longName": "Ice Legs Traveller 2 SL",
       "sortOrder": 720,
       "enabled": true,
-      "colorHex": "#FF41A3F3"
+      "colorHex": "#41A3F3"
     },
     {
       "axisId": 84,
@@ -584,7 +584,7 @@
       "longName": "Ice Legs Traveller 1 SR",
       "sortOrder": 730,
       "enabled": true,
-      "colorHex": "#FF41A3F3"
+      "colorHex": "#41A3F3"
     },
     {
       "axisId": 86,
@@ -592,7 +592,7 @@
       "longName": "Ice Legs Traveller 2 SR",
       "sortOrder": 740,
       "enabled": true,
-      "colorHex": "#FF41A3F3"
+      "colorHex": "#41A3F3"
     },
     {
       "axisId": 89,
@@ -600,7 +600,7 @@
       "longName": "Ice Waterfall SL",
       "sortOrder": 750,
       "enabled": true,
-      "colorHex": "#FF6672FF"
+      "colorHex": "#6672FF"
     },
     {
       "axisId": 90,
@@ -608,7 +608,7 @@
       "longName": "Ice Waterfall SR",
       "sortOrder": 760,
       "enabled": true,
-      "colorHex": "#FF6672FF"
+      "colorHex": "#6672FF"
     },
     {
       "axisId": 76,
@@ -616,7 +616,7 @@
       "longName": "Ice Strike",
       "sortOrder": 770,
       "enabled": true,
-      "colorHex": "#FF800000"
+      "colorHex": "#800000"
     },
     {
       "axisId": 77,
@@ -624,7 +624,7 @@
       "longName": "Ice Strike Richtung",
       "sortOrder": 780,
       "enabled": true,
-      "colorHex": "#FF800000"
+      "colorHex": "#800000"
     },
     {
       "axisId": 68,
@@ -648,7 +648,7 @@
       "longName": "LX 1",
       "sortOrder": 810,
       "enabled": true,
-      "colorHex": "#FFDDAAAA"
+      "colorHex": "#DDAAAA"
     },
     {
       "axisId": 8,
@@ -656,7 +656,7 @@
       "longName": "LX 2",
       "sortOrder": 820,
       "enabled": true,
-      "colorHex": "#FFDDAAAA"
+      "colorHex": "#DDAAAA"
     },
     {
       "axisId": 12,
@@ -664,7 +664,7 @@
       "longName": "LX 4",
       "sortOrder": 830,
       "enabled": true,
-      "colorHex": "#FFDDAAAA"
+      "colorHex": "#DDAAAA"
     },
     {
       "axisId": 31,
@@ -672,7 +672,7 @@
       "longName": "LX 4",
       "sortOrder": 840,
       "enabled": true,
-      "colorHex": "#FFDDAAAA"
+      "colorHex": "#DDAAAA"
     },
     {
       "axisId": 0,
