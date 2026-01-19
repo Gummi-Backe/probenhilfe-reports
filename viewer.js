@@ -248,9 +248,51 @@
     if (!parent) return;
     const other = direction < 0 ? step.previousElementSibling : step.nextElementSibling;
     if (!other) return;
+
+    const prefersReducedMotion = (() => {
+      try { return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
+      catch { return false; }
+    })();
+
+    const beforeRects = new Map();
+    if (!prefersReducedMotion) {
+      Array.from(parent.querySelectorAll(':scope > .step')).forEach(el => {
+        beforeRects.set(el, el.getBoundingClientRect());
+      });
+    }
+
     if (direction < 0) parent.insertBefore(step, other);
     else parent.insertBefore(other, step);
+
     updateStepIndices(parent);
+
+    if (!prefersReducedMotion) {
+      const els = Array.from(parent.querySelectorAll(':scope > .step'));
+      els.forEach(el => {
+        const before = beforeRects.get(el);
+        if (!before) return;
+        const after = el.getBoundingClientRect();
+        const dx = before.left - after.left;
+        const dy = before.top - after.top;
+        if (!dx && !dy) return;
+
+        el.style.transition = 'transform 0s';
+        el.style.transform = `translate(${dx}px, ${dy}px)`;
+        el.getBoundingClientRect(); // force reflow
+
+        el.style.transition = 'transform 180ms ease';
+        el.style.transform = '';
+
+        const cleanup = () => {
+          el.style.transition = '';
+          el.style.transform = '';
+          el.removeEventListener('transitionend', cleanup);
+        };
+        el.addEventListener('transitionend', cleanup);
+        window.setTimeout(cleanup, 260);
+      });
+    }
+
     notifyOrderChanged();
   }
 
