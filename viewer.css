@@ -141,6 +141,7 @@ body.modalOpen{
   border-radius:14px;
   overflow:hidden;
   font-size:13px;
+  will-change: transform;
 }
 .stepHead{
   display:flex;
