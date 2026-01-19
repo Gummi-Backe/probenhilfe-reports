@@ -241,14 +241,6 @@
 
     const compactToggle = document.getElementById('compactToggle');
     compactToggle?.addEventListener('change', () => setAllCollapsed(compactToggle.checked));
-    document.getElementById('collapseAllBtn')?.addEventListener('click', () => {
-      if (compactToggle) compactToggle.checked = true;
-      setAllCollapsed(true);
-    });
-    document.getElementById('expandAllBtn')?.addEventListener('click', () => {
-      if (compactToggle) compactToggle.checked = false;
-      setAllCollapsed(false);
-    });
   }
 
   function moveStep(step, direction) {
@@ -874,8 +866,6 @@
             <button class="btn iconBtn" id="axesBtn" type="button" title="Achsen" aria-label="Achsen">&#x25A6;</button>
             <button class="btn iconBtn" id="syncRefreshBtn" type="button" title="Sortierung aktualisieren" aria-label="Sortierung aktualisieren">&#x21BB;</button>
             <button class="btn iconBtn" id="helpBtn" type="button" title="Hilfe" aria-label="Hilfe">?</button>
-            <button class="btn iconBtn" id="collapseAllBtn" type="button" title="Alles einklappen" aria-label="Alles einklappen">&#x25BE;</button>
-            <button class="btn iconBtn" id="expandAllBtn" type="button" title="Alles ausklappen" aria-label="Alles ausklappen">&#x25B4;</button>
           </div>
         </div>
       </div>
@@ -906,8 +896,6 @@
             <ul>
               <li>Tippe auf einen Cue-Kopf, um genau diesen Cue ein- oder auszuklappen.</li>
               <li><span class="kbd">&#9776;</span> Kompaktmodus (gut zum Sortieren).</li>
-              <li><span class="kbd">&#x25BE;</span> Alles einklappen.</li>
-              <li><span class="kbd">&#x25B4;</span> Alles ausklappen.</li>
             </ul>
             <h3>Sortieren</h3>
             <ul>
