@@ -199,7 +199,7 @@ body.modalOpen{
 }
 .badge.warn{border-color:rgba(239,68,68,.45); color:#fecaca; background:rgba(239,68,68,.10)}
 .badge.notice{border-color:rgba(255,183,3,.55); color:#ffe8b3; background:rgba(255,183,3,.10)}
-.reorderBtns{display:none; gap:6px}
+.reorderBtns{display:flex; gap:6px}
 .miniBtn{
   width:28px;
   height:28px;
@@ -216,7 +216,6 @@ body.modalOpen{
 .stepBody.open{display:block}
 body.compact .stepBody{display:none}
 body.compact .stepBody.open{display:block}
-body.compact .reorderBtns{display:flex}
 
 .disabledNote{padding:10px; color:var(--muted)}
 .tableWrap{overflow-x:auto; padding:0 10px 10px}
