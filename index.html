@@ -488,6 +488,9 @@ tbody tr:last-child td{border-bottom:none}
 }
 
 </style>
+<script id="phData" type="application/json">
+{"version":1,"maxBlocksPerCue":3,"suggestions":{"STDDzUXFOjtX":{"fromCueId":85,"toCueId":146,"startPositions":{"34":7361,"37":10615,"38":1165,"39":1165,"40":2920,"41":2920,"42":2785,"43":2785,"44":2920,"45":2920,"46":1165,"47":1165,"48":5125,"49":5125,"65":0,"69":0,"70":0,"71":0,"72":0,"73":0,"74":0,"75":0,"66":0,"14":9150,"96":0,"17":0,"36":0,"63":2440,"64":1300,"3":0,"6":6463,"5":9550,"23":11000,"56":9800,"58":-10570,"60":10445,"62":-10445,"11":8950,"84":-5090,"85":5090,"86":-4380,"87":4388,"90":-6149,"89":6284,"88":0,"9":0,"33":0,"15":0,"10":0,"67":7450,"55":11700,"54":11600},"targetPositions":{"34":7361,"37":8539,"38":2785,"39":5585,"40":4420,"41":4420,"42":1165,"43":1165,"44":4420,"45":4420,"46":3485,"47":3485,"48":5125,"49":5125,"65":900,"69":1,"70":1,"71":1,"72":1,"73":1,"74":1,"75":1,"66":900,"14":2440,"96":900,"17":9440,"36":9440,"63":4400,"64":4035,"3":8700,"6":6382,"5":6550,"23":6773,"56":12500,"58":-2073,"60":9157,"62":-10445,"11":6529,"84":-4291,"85":4291,"86":-3520,"87":3520,"90":-6149,"89":6284,"88":663,"9":9000,"33":9000,"15":7990,"10":7990,"67":0,"55":9988,"54":11000},"cueActions":{"326":{"34":{"s":7361,"e":7361},"37":{"s":8539,"e":8539},"38":{"s":2785,"e":2785},"39":{"s":5585,"e":5585},"40":{"s":4420,"e":4420},"41":{"s":4420,"e":4420},"42":{"s":1165,"e":1165},"43":{"s":1165,"e":1165},"44":{"s":4420,"e":4420},"45":{"s":4420,"e":4420},"46":{"s":3485,"e":3485},"47":{"s":3485,"e":3485},"48":{"s":5125,"e":5125},"49":{"s":5125,"e":5125}},"154":{"65":{"s":900,"e":0},"69":{"s":1,"e":0},"70":{"s":1,"e":0},"71":{"s":1,"e":0},"72":{"s":1,"e":0},"73":{"s":1,"e":0},"74":{"s":1,"e":0},"75":{"s":1,"e":0},"66":{"s":900,"e":0},"14":{"s":2440,"e":9150},"96":{"s":900,"e":0}},"89":{"17":{"s":0,"e":9440},"36":{"s":0,"e":9440},"63":{"s":2440,"e":4400},"64":{"s":1300,"e":4035},"3":{"s":0,"e":8700},"6":{"s":6463,"e":6382}},"132":{"5":{"s":9550,"e":6550},"23":{"s":11000,"e":6773},"56":{"s":4835,"e":12500},"58":{"s":-4835,"e":-10445},"60":{"s":4310,"e":11000},"62":{"s":-4310,"e":-10445},"11":{"s":8950,"e":6529}},"135":{"84":{"s":-5090,"e":-4291},"85":{"s":5090,"e":4291},"86":{"s":-4380,"e":-3520},"87":{"s":4388,"e":3520},"90":{"s":-6149,"e":-3764}},"145":{"89":{"s":3700,"e":6284},"60":{"s":3315,"e":9157},"65":{"s":0,"e":900},"66":{"s":0,"e":900},"14":{"s":9150,"e":2440},"88":{"s":0,"e":663},"96":{"s":0,"e":900},"90":{"s":-3536,"e":-6149}},"55":{"9":{"s":9000,"e":0},"33":{"s":9000,"e":0},"63":{"s":4400,"e":2030}},"28":{"15":{"s":7990,"e":0},"10":{"s":7990,"e":0}},"144":{"67":{"s":7450,"e":0}},"136":{"55":{"s":8018,"e":9988}},"58":{"54":{"s":11000,"e":11600}}}}}}
+</script>
 <script>
 
 if ('serviceWorker' in navigator) {
@@ -864,10 +867,328 @@ function applyOrdersToDom(orders){
     newOrder.forEach(el => stepsEl.appendChild(el));
     updateStepIndices(stepsEl);
   });
+  recomputeAllSections();
+}
+
+let _phData = null;
+function getPhData(){
+  if (_phData) return _phData;
+  const el = document.getElementById('phData');
+  if (!el) return null;
+  try{
+    _phData = JSON.parse(el.textContent || '{}');
+  }catch(_e){
+    _phData = null;
+  }
+  return _phData;
+}
+
+function mapStatusToRowClass(statusKind){
+  switch(statusKind){
+    case 'BringtAufZiel': return 'bring';
+    case 'BleibtRichtig':
+    case 'KeineBewegung': return 'ok';
+    case 'BewegtWegVonZiel': return 'warn';
+    default: return 'neutral';
+  }
+}
+
+function setBadge(stepEl, badgeName, text){
+  const badge = stepEl.querySelector(`.badge[data-badge='${badgeName}']`);
+  if (!badge) return;
+  const t = (text || '').trim();
+  if (!t){
+    badge.style.display = 'none';
+    badge.textContent = '';
+  }else{
+    badge.style.display = 'inline-flex';
+    badge.textContent = t;
+  }
+}
+
+function setRow(stepEl, axisId, start, target, unblockNotice, statusText, statusKind){
+  const tr = stepEl.querySelector(`tr[data-axisid='${axisId}']`);
+  if (!tr) return;
+
+  tr.className = `row ${mapStatusToRowClass(statusKind)}`;
+
+  const startTd = tr.querySelector('[data-role=start]');
+  const targetTd = tr.querySelector('[data-role=target]');
+  if (startTd) startTd.textContent = (start == null) ? '' : String(start);
+  if (targetTd) targetTd.textContent = (target == null) ? '' : String(target);
+
+  const noticeSpan = tr.querySelector('[data-role=unblockNotice]');
+  const statusSpan = tr.querySelector('[data-role=statusText]');
+
+  const noticeText = (unblockNotice || '').trim();
+  if (noticeSpan){
+    noticeSpan.textContent = noticeText;
+    noticeSpan.style.display = noticeText ? 'inline' : 'none';
+  }
+  if (statusSpan){
+    statusSpan.textContent = statusText || '';
+  }
+}
+
+function recomputeSection(section, model, maxBlocksPerCue){
+  if (!section || !model) return;
+
+  const maxBlocks = Number.isFinite(maxBlocksPerCue) ? maxBlocksPerCue : 3;
+  const startPositions = model.startPositions || {};
+  const targetPositions = model.targetPositions || {};
+  const cueActions = model.cueActions || {};
+
+  const stepsEl = section.querySelector('.steps');
+  if (!stepsEl) return;
+
+  // clone start positions
+  const positions = {};
+  Object.keys(startPositions).forEach(k => { positions[k] = startPositions[k]; });
+
+  // Look-ahead: first step that can bring an axis directly onto target
+  const firstTargetStepIndexByAxis = {};
+  const stepEls = Array.from(stepsEl.querySelectorAll(':scope > .step'));
+  for (let i = 0; i < stepEls.length; i++){
+    const stepEl = stepEls[i];
+    if (!stepEl || stepEl.dataset.disabled === '1') continue;
+
+    const kind = stepEl.dataset.kind;
+    if (kind === 'manual'){
+      const axisId = parseInt(stepEl.dataset.axisid || '', 10);
+      const axisKey = String(axisId);
+      if (!Number.isFinite(axisId)) continue;
+      if (!Object.prototype.hasOwnProperty.call(targetPositions, axisKey)) continue;
+      if (!Object.prototype.hasOwnProperty.call(firstTargetStepIndexByAxis, axisKey)){
+        firstTargetStepIndexByAxis[axisKey] = i;
+      }
+      continue;
+    }
+
+    const cueId = parseInt(stepEl.dataset.cueid || '', 10);
+    if (!Number.isFinite(cueId)) continue;
+    const actions = cueActions[String(cueId)];
+    if (!actions) continue;
+    const isBackward = stepEl.dataset.backward === '1';
+
+    for (const axisKey in actions){
+      if (!Object.prototype.hasOwnProperty.call(actions, axisKey)) continue;
+      if (Object.prototype.hasOwnProperty.call(firstTargetStepIndexByAxis, axisKey)) continue;
+      if (!Object.prototype.hasOwnProperty.call(targetPositions, axisKey)) continue;
+
+      const target = targetPositions[axisKey];
+      const act = actions[axisKey];
+      const next = isBackward ? act.s : act.e;
+      if (next === target){
+        firstTargetStepIndexByAxis[axisKey] = i;
+      }
+    }
+  }
+
+  const blockedEarlier = new Set();
+
+  for (let i = 0; i < stepEls.length; i++){
+    const stepEl = stepEls[i];
+    if (!stepEl) continue;
+
+    if (stepEl.dataset.disabled === '1'){
+      setBadge(stepEl, 'unblock', '');
+      setBadge(stepEl, 'block', '');
+      setBadge(stepEl, 'affected', '');
+      continue;
+    }
+
+    const kind = stepEl.dataset.kind;
+
+    if (kind === 'manual'){
+      const axisId = parseInt(stepEl.dataset.axisid || '', 10);
+      if (!Number.isFinite(axisId)) continue;
+      const axisKey = String(axisId);
+      const start = Object.prototype.hasOwnProperty.call(positions, axisKey) ? positions[axisKey] : null;
+      const target = Object.prototype.hasOwnProperty.call(targetPositions, axisKey) ? targetPositions[axisKey] : null;
+
+      const needsUnblock = (start != null && target != null && start !== target && blockedEarlier.has(axisId));
+      const unblockNow = needsUnblock ? [axisId] : [];
+      const unblockText = unblockNow.length ? `Entsperren: ${unblockNow.length}` : '';
+
+      const affected = (start != null && target != null && start === target) ? 'Bereits auf Ziel' : (target != null ? `Auf Position ${target}` : '');
+      setBadge(stepEl, 'affected', affected);
+      setBadge(stepEl, 'block', '');
+      setBadge(stepEl, 'unblock', unblockText);
+
+      let statusKind = 'SonstigeBewegung';
+      let statusText = 'Einzelfahrt auf die Zielposition.';
+      let unblockNotice = needsUnblock ? 'Vor dieser Positionsfahrt entsperren. ' : null;
+
+      if (start != null && target != null){
+        if (start === target){
+          statusKind = 'BleibtRichtig';
+          statusText = `Achse bleibt auf Position ${start}.`;
+          unblockNotice = null;
+        }else{
+          statusKind = 'BringtAufZiel';
+          statusText = `Achse muss von ${start} nach ${target} fahren.`;
+        }
+      }
+
+      setRow(stepEl, axisId, start, target, unblockNotice, statusText, statusKind);
+
+      if (target != null){
+        positions[axisKey] = target;
+      }
+
+      continue;
+    }
+
+    const cueId = parseInt(stepEl.dataset.cueid || '', 10);
+    if (!Number.isFinite(cueId)) continue;
+
+    const actions = cueActions[String(cueId)];
+    if (!actions) continue;
+
+    const isBackward = stepEl.dataset.backward === '1';
+
+    const requiredBlocks = new Set();
+    const unblocks = new Set();
+    const coveredNow = [];
+
+    for (const axisKey in actions){
+      if (!Object.prototype.hasOwnProperty.call(actions, axisKey)) continue;
+      if (!Object.prototype.hasOwnProperty.call(targetPositions, axisKey)) continue;
+      if (!Object.prototype.hasOwnProperty.call(positions, axisKey)) continue;
+
+      const axisId = parseInt(axisKey, 10);
+      if (!Number.isFinite(axisId)) continue;
+
+      const target = targetPositions[axisKey];
+      const current = positions[axisKey];
+      const act = actions[axisKey];
+      const next = isBackward ? act.s : act.e;
+
+      if (current === target && current !== next && next !== target){
+        requiredBlocks.add(axisId);
+        continue;
+      }
+
+      const firstTargetIndex = firstTargetStepIndexByAxis[axisKey];
+      if (current !== next && next !== target && firstTargetIndex != null && firstTargetIndex > i){
+        requiredBlocks.add(axisId);
+        continue;
+      }
+
+      if (current !== target && next === target && blockedEarlier.has(axisId)){
+        unblocks.add(axisId);
+      }
+    }
+
+    if (requiredBlocks.size){
+      requiredBlocks.forEach(id => blockedEarlier.add(id));
+    }
+
+    const blockCount = requiredBlocks.size;
+    const blockText = blockCount
+      ? (blockCount > maxBlocks ? `ZU VIELE Sperren n\u00F6tig: ${blockCount}` : `Sperren: ${blockCount}`)
+      : '';
+    const unblockText = unblocks.size ? `Entsperren: ${unblocks.size}` : '';
+
+    // Update table rows + simulate positions
+    for (const axisKey in actions){
+      if (!Object.prototype.hasOwnProperty.call(actions, axisKey)) continue;
+
+      const axisId = parseInt(axisKey, 10);
+      if (!Number.isFinite(axisId)) continue;
+
+      const act = actions[axisKey];
+      const scriptStart = isBackward ? act.e : act.s;
+      const scriptEnd = isBackward ? act.s : act.e;
+      const scriptMoves = scriptStart !== scriptEnd;
+      const next = scriptEnd;
+
+      const start = Object.prototype.hasOwnProperty.call(positions, axisKey) ? positions[axisKey] : null;
+      const target = Object.prototype.hasOwnProperty.call(targetPositions, axisKey) ? targetPositions[axisKey] : null;
+
+      const isBlocked = requiredBlocks.has(axisId);
+      const isUnblocked = unblocks.has(axisId);
+
+      let unblockNotice = null;
+      let statusKind = 'SonstigeBewegung';
+      let statusText = 'F\u00FCr diesen Sprung ist keine vollst\u00E4ndige Positionsinformation vorhanden.';
+
+      if (isBlocked){
+        statusKind = 'BewegtWegVonZiel';
+        if (target != null){
+          statusText = `In diesem Vorschlag wird die Achse gesperrt. Cue w\u00FCrde sie sonst von ${scriptStart} nach ${scriptEnd} fahren (Sprung-Ziel ${target}).`;
+        }else{
+          statusText = `In diesem Vorschlag wird die Achse gesperrt. Cue w\u00FCrde sie sonst von ${scriptStart} nach ${scriptEnd} fahren.`;
+        }
+      }else if (start != null && target != null && next === target){
+        if (start === target){
+          statusKind = 'BleibtRichtig';
+          statusText = `Achse bleibt in diesem Cue auf ${start}.`;
+        }else{
+          statusKind = 'BringtAufZiel';
+          statusText = `Achse muss von ${start} nach ${target} fahren.`;
+        }
+        if (isUnblocked){
+          unblockNotice = 'Vor diesem Cue entsperren. ';
+        }
+      }else if (start != null && target != null){
+        if (start === target){
+          if (start === next){
+            statusKind = 'BleibtRichtig';
+            statusText = `Achse bleibt in diesem Cue auf ${start}.`;
+          }else{
+            statusKind = 'BewegtWegVonZiel';
+            statusText = `Cue w\u00FCrde die Achse von ${start} auf ${next} setzen, obwohl das Ziel ${target} ist (Sperren empfohlen).`;
+          }
+        }else{
+          if (start === next){
+            statusKind = 'KeineBewegung';
+            statusText = `Achse bleibt in diesem Cue auf ${start} (Ziel ${target}).`;
+          }else{
+            statusKind = 'SonstigeBewegung';
+            statusText = `Cue w\u00FCrde die Achse von ${start} auf ${next} setzen (Ziel ${target}).`;
+          }
+        }
+      }else if (!scriptMoves){
+        statusKind = 'KeineBewegung';
+        statusText = (start != null)
+          ? `In diesem Cue f\u00E4hrt die Achse nicht und bleibt auf ${start}.`
+          : 'In diesem Cue f\u00E4hrt die Achse nicht.';
+      }
+
+      setRow(stepEl, axisId, start, target, unblockNotice, statusText, statusKind);
+
+      if (!isBlocked && start != null && next != null && start !== next && target != null && next === target && start !== target){
+        coveredNow.push(axisId);
+      }
+
+      if (!isBlocked && next != null){
+        positions[axisKey] = next;
+      }
+    }
+
+    const affectedText = coveredNow.length ? `Bringt auf Ziel: ${coveredNow.length}` : '';
+    setBadge(stepEl, 'affected', affectedText);
+    setBadge(stepEl, 'block', blockText);
+    setBadge(stepEl, 'unblock', unblockText);
+  }
+}
+
+function recomputeAllSections(){
+  const data = getPhData();
+  if (!data || !data.suggestions) return;
+  const maxBlocks = data.maxBlocksPerCue || 3;
+  document.querySelectorAll('section.section[data-sid]').forEach(section => {
+    const sid = section.dataset.sid;
+    const model = sid ? data.suggestions[sid] : null;
+    if (!model) return;
+    recomputeSection(section, model, maxBlocks);
+  });
 }
 
 let _saveTimer = null;
 function notifyOrderChanged(){
+  recomputeAllSections();
   if (!FIREBASE_DB_BASE) return;
   if (_saveTimer) window.clearTimeout(_saveTimer);
   _saveTimer = window.setTimeout(async () => {
@@ -893,6 +1214,7 @@ async function refreshOrderFromFirebase(){
     if (!data || !data.orders) return;
     if (data.rev != null) _lastRemoteRev = data.rev;
     applyOrdersToDom(data.orders);
+    recomputeAllSections();
   }catch(_e){
     // sync optional
   }
@@ -919,6 +1241,7 @@ window.addEventListener('DOMContentLoaded', () => {
   // Standard: ausgeklappt
   setAllCollapsed(false);
   document.querySelectorAll('.steps').forEach((stepsEl) => enablePointerReorder(stepsEl));
+  recomputeAllSections();
 });
 
 </script>
@@ -974,9 +1297,9 @@ window.addEventListener('DOMContentLoaded', () => {
 <div class="header">
 <div>
 <div class="title">Probenhilfe - Cue-Sequenz</div>
-<div class="subtitle">Sprung: AQ 13 - DYWBA Snowman (CLEAR) → AQ 29.7 - Coro 1 IN (AQ GO)</div>
+<div class="subtitle">Sprung: AQ 13 - DYWBA Snowman (CLEAR) → AQ 56 - Shells OPEN/Lichtleite IN</div>
 </div>
-<div class="meta">Export: 2026-01-19 12:05:27<br/><span class="muted">Quelle: Probenhilfe</span></div>
+<div class="meta">Export: 2026-01-19 12:40:37<br/><span class="muted">Quelle: Probenhilfe</span></div>
 </div>
 <div class="legend">
 <div class="chip"><span class="dot bring"></span>Bringt auf Ziel</div>
@@ -985,20 +1308,20 @@ window.addEventListener('DOMContentLoaded', () => {
 <div class="chip"><span class="dot neutral"></span>Sonstiges</div>
 <div class="chip"><span class="dot" style="background:var(--notice)"></span>Vor diesem Cue entsperren</div>
 </div>
-<section class="section" data-sid="IP9KVKQluTEu">
+<section class="section" data-sid="STDDzUXFOjtX">
 <div class="sectionHead">
-<div class="sectionTitle">Empfohlene Cue-Sequenz f&#252;r den Sprung von AQ 13 - DYWBA Snowman (CLEAR) nach AQ 29.7 - Coro 1 IN (AQ GO)</div>
-<div class="sectionSummary">Deckt 19 von 19 ben&#246;tigten Achsen ab.</div>
+<div class="sectionTitle">Empfohlene Cue-Sequenz f&#252;r den Sprung von AQ 13 - DYWBA Snowman (CLEAR) nach AQ 56 - Shells OPEN/Lichtleite IN</div>
+<div class="sectionSummary">Deckt 45 von 46 ben&#246;tigten Achsen ab.</div>
 </div>
 <div class="steps">
-<div class="step" data-step-id="c:f:p89:cue89">
+<div class="step" data-step-id="c:f:p326:cue326" data-kind="cue" data-backward="0" data-disabled="0" data-cueid="326">
 <div class="stepHead">
 <div class="stepLeft">
 <div class="dragHandle" title="Verschieben">≡</div>
 <div class="stepIndex">1</div>
 <div class="stepTitle">
-<span class="dirBadge dirForward">Vorw&#228;rts 89</span>
-<span class="cueText">AQ 15 - Shipwreck           LX 72 (1 Sperre)</span>
+<span class="dirBadge dirForward">Vorw&#228;rts 326</span>
+<span class="cueText">Preset 1.9b - Winter Wonderland</span>
 </div>
 </div>
 <div class="badges">
@@ -1006,8 +1329,9 @@ window.addEventListener('DOMContentLoaded', () => {
 <button class="miniBtn" type="button" data-move="up" title="Nach oben">&#x2191;</button>
 <button class="miniBtn" type="button" data-move="down" title="Nach unten">&#x2193;</button>
 </div>
-<span class="badge warn">Sperren: 1</span>
-<span class="badge">Bringt auf Ziel: 5</span>
+<span class="badge notice" data-badge="unblock" style="display:none"></span>
+<span class="badge warn" data-badge="block" style="display:none"></span>
+<span class="badge" data-badge="affected">Bringt auf Ziel: 11</span>
 </div>
 </div>
 <div class="stepBody open">
@@ -1020,55 +1344,145 @@ window.addEventListener('DOMContentLoaded', () => {
 <th>Status</th>
 </tr></thead>
 <tbody>
-<tr class="row warn">
-<td>IceWalls4 <span class="muted">(IWall4)</span></td>
-<td class="mono">6463</td>
-<td class="mono">6463</td>
-<td><span class="status">In diesem Vorschlag wird die Achse gesperrt. Cue w&#252;rde sie sonst von 6463 nach 6382 fahren (Sprung-Ziel 6463).</span></td>
+<tr class="row bring" data-axisid="38">
+<td>Lichtleiter 1 SL <span class="muted">(LL1SL)</span></td>
+<td class="mono" data-role="start">1165</td>
+<td class="mono" data-role="target">2785</td>
+<td>
+<span class="noticeText" data-role="unblockNotice" style="display:none"></span>
+<span class="status" data-role="statusText">Achse muss von 1165 nach 2785 fahren.</span>
+</td>
 </tr>
-<tr class="row bring">
-<td>[AWall]  Arendelle Wall / <span class="muted">(AWinDS)</span></td>
-<td class="mono">0</td>
-<td class="mono">9440</td>
-<td><span class="status">Achse muss von 0 nach 9440 fahren.</span></td>
+<tr class="row bring" data-axisid="39">
+<td>Lichtleiter 1 SR <span class="muted">(LL1SR)</span></td>
+<td class="mono" data-role="start">1165</td>
+<td class="mono" data-role="target">5585</td>
+<td>
+<span class="noticeText" data-role="unblockNotice" style="display:none"></span>
+<span class="status" data-role="statusText">Achse muss von 1165 nach 5585 fahren.</span>
+</td>
 </tr>
-<tr class="row bring">
-<td>[AWall]  Arendelle Wall / <span class="muted">(AWinUS)</span></td>
-<td class="mono">0</td>
-<td class="mono">9440</td>
-<td><span class="status">Achse muss von 0 nach 9440 fahren.</span></td>
+<tr class="row bring" data-axisid="40">
+<td>Lichtleiter 2 SL <span class="muted">(LL2SL)</span></td>
+<td class="mono" data-role="start">2920</td>
+<td class="mono" data-role="target">4420</td>
+<td>
+<span class="noticeText" data-role="unblockNotice" style="display:none"></span>
+<span class="status" data-role="statusText">Achse muss von 2920 nach 4420 fahren.</span>
+</td>
 </tr>
-<tr class="row bring">
-<td>Arendel Portal 1 Travelle <span class="muted">(AP1 Tr)</span></td>
-<td class="mono">2440</td>
-<td class="mono">4400</td>
-<td><span class="status">Achse muss von 2440 nach 4400 fahren.</span></td>
+<tr class="row bring" data-axisid="41">
+<td>Lichtleiter 2 SR <span class="muted">(LL2SR)</span></td>
+<td class="mono" data-role="start">2920</td>
+<td class="mono" data-role="target">4420</td>
+<td>
+<span class="noticeText" data-role="unblockNotice" style="display:none"></span>
+<span class="status" data-role="statusText">Achse muss von 2920 nach 4420 fahren.</span>
+</td>
 </tr>
-<tr class="row bring">
-<td>Arendel Portal 2 Travelle <span class="muted">(AP2 Tr)</span></td>
-<td class="mono">1300</td>
-<td class="mono">4035</td>
-<td><span class="status">Achse muss von 1300 nach 4035 fahren.</span></td>
+<tr class="row bring" data-axisid="42">
+<td>Lichtleiter 3 SL <span class="muted">(LL3SL)</span></td>
+<td class="mono" data-role="start">2785</td>
+<td class="mono" data-role="target">1165</td>
+<td>
+<span class="noticeText" data-role="unblockNotice" style="display:none"></span>
+<span class="status" data-role="statusText">Achse muss von 2785 nach 1165 fahren.</span>
+</td>
 </tr>
-<tr class="row bring">
-<td>ArendelleDoor <span class="muted">(ADoor)</span></td>
-<td class="mono">0</td>
-<td class="mono">8700</td>
-<td><span class="status">Achse muss von 0 nach 8700 fahren.</span></td>
+<tr class="row bring" data-axisid="43">
+<td>Lichtleiter 3 SR <span class="muted">(LL3SR)</span></td>
+<td class="mono" data-role="start">2785</td>
+<td class="mono" data-role="target">1165</td>
+<td>
+<span class="noticeText" data-role="unblockNotice" style="display:none"></span>
+<span class="status" data-role="statusText">Achse muss von 2785 nach 1165 fahren.</span>
+</td>
+</tr>
+<tr class="row bring" data-axisid="44">
+<td>Lichtleiter 4 SL <span class="muted">(LL4SL)</span></td>
+<td class="mono" data-role="start">2920</td>
+<td class="mono" data-role="target">4420</td>
+<td>
+<span class="noticeText" data-role="unblockNotice" style="display:none"></span>
+<span class="status" data-role="statusText">Achse muss von 2920 nach 4420 fahren.</span>
+</td>
+</tr>
+<tr class="row bring" data-axisid="45">
+<td>Lichtleiter 4 SR <span class="muted">(LL4SR)</span></td>
+<td class="mono" data-role="start">2920</td>
+<td class="mono" data-role="target">4420</td>
+<td>
+<span class="noticeText" data-role="unblockNotice" style="display:none"></span>
+<span class="status" data-role="statusText">Achse muss von 2920 nach 4420 fahren.</span>
+</td>
+</tr>
+<tr class="row bring" data-axisid="46">
+<td>Lichtleiter 5 SL <span class="muted">(LL5SL)</span></td>
+<td class="mono" data-role="start">1165</td>
+<td class="mono" data-role="target">3485</td>
+<td>
+<span class="noticeText" data-role="unblockNotice" style="display:none"></span>
+<span class="status" data-role="statusText">Achse muss von 1165 nach 3485 fahren.</span>
+</td>
+</tr>
+<tr class="row bring" data-axisid="47">
+<td>Lichtleiter 5 SR <span class="muted">(LL5SR)</span></td>
+<td class="mono" data-role="start">1165</td>
+<td class="mono" data-role="target">3485</td>
+<td>
+<span class="noticeText" data-role="unblockNotice" style="display:none"></span>
+<span class="status" data-role="statusText">Achse muss von 1165 nach 3485 fahren.</span>
+</td>
+</tr>
+<tr class="row bring" data-axisid="37">
+<td>LX 3 <span class="muted">(LX 3)</span></td>
+<td class="mono" data-role="start">10615</td>
+<td class="mono" data-role="target">8539</td>
+<td>
+<span class="noticeText" data-role="unblockNotice" style="display:none"></span>
+<span class="status" data-role="statusText">Achse muss von 10615 nach 8539 fahren.</span>
+</td>
+</tr>
+<tr class="row ok" data-axisid="48">
+<td>Lichtleiter 6 SL <span class="muted">(LL6SL)</span></td>
+<td class="mono" data-role="start">5125</td>
+<td class="mono" data-role="target">5125</td>
+<td>
+<span class="noticeText" data-role="unblockNotice" style="display:none"></span>
+<span class="status" data-role="statusText">Achse bleibt in diesem Cue auf 5125.</span>
+</td>
+</tr>
+<tr class="row ok" data-axisid="49">
+<td>Lichtleiter 6 SR <span class="muted">(LL6SR)</span></td>
+<td class="mono" data-role="start">5125</td>
+<td class="mono" data-role="target">5125</td>
+<td>
+<span class="noticeText" data-role="unblockNotice" style="display:none"></span>
+<span class="status" data-role="statusText">Achse bleibt in diesem Cue auf 5125.</span>
+</td>
+</tr>
+<tr class="row ok" data-axisid="34">
+<td>LX 5 <span class="muted">(LX 5)</span></td>
+<td class="mono" data-role="start">7361</td>
+<td class="mono" data-role="target">7361</td>
+<td>
+<span class="noticeText" data-role="unblockNotice" style="display:none"></span>
+<span class="status" data-role="statusText">Achse bleibt in diesem Cue auf 7361.</span>
+</td>
 </tr>
 </tbody>
 </table>
 </div>
 </div>
 </div>
-<div class="step" data-step-id="c:b:p122:cue122">
+<div class="step" data-step-id="c:b:p154:cue154" data-kind="cue" data-backward="1" data-disabled="0" data-cueid="154">
 <div class="stepHead">
 <div class="stepLeft">
 <div class="dragHandle" title="Verschieben">≡</div>
 <div class="stepIndex">2</div>
 <div class="stepTitle">
-<span class="dirBadge dirBackward">R&#252;ckw&#228;rts 122</span>
-<span class="cueText">AQ 36 - Tracks ON Torchieres</span>
+<span class="dirBadge dirBackward">R&#252;ckw&#228;rts 154</span>
+<span class="cueText">AQ 59 - Out of Summer (AQ GO)</span>
 </div>
 </div>
 <div class="badges">
@@ -1076,7 +1490,9 @@ window.addEventListener('DOMContentLoaded', () => {
 <button class="miniBtn" type="button" data-move="up" title="Nach oben">&#x2191;</button>
 <button class="miniBtn" type="button" data-move="down" title="Nach unten">&#x2193;</button>
 </div>
-<span class="badge">Bringt auf Ziel: 3</span>
+<span class="badge notice" data-badge="unblock" style="display:none"></span>
+<span class="badge warn" data-badge="block" style="display:none"></span>
+<span class="badge" data-badge="affected">Bringt auf Ziel: 11</span>
 </div>
 </div>
 <div class="stepBody open">
@@ -1089,49 +1505,118 @@ window.addEventListener('DOMContentLoaded', () => {
 <th>Status</th>
 </tr></thead>
 <tbody>
-<tr class="row bring">
-<td>Chandelier <span class="muted">(Chande)</span></td>
-<td class="mono">11600</td>
-<td class="mono">7804</td>
-<td><span class="status">Achse muss von 11600 nach 7804 fahren.</span></td>
+<tr class="row bring" data-axisid="66">
+<td>Items 1 <span class="muted">(Itmes1)</span></td>
+<td class="mono" data-role="start">0</td>
+<td class="mono" data-role="target">900</td>
+<td>
+<span class="noticeText" data-role="unblockNotice" style="display:none"></span>
+<span class="status" data-role="statusText">Achse muss von 0 nach 900 fahren.</span>
+</td>
 </tr>
-<tr class="row bring">
-<td>Track 3 <span class="muted">(Track3)</span></td>
-<td class="mono">9800</td>
-<td class="mono">10445</td>
-<td><span class="status">Achse muss von 9800 nach 10445 fahren.</span></td>
+<tr class="row bring" data-axisid="96">
+<td>Items 2 <span class="muted">(Items2)</span></td>
+<td class="mono" data-role="start">0</td>
+<td class="mono" data-role="target">900</td>
+<td>
+<span class="noticeText" data-role="unblockNotice" style="display:none"></span>
+<span class="status" data-role="statusText">Achse muss von 0 nach 900 fahren.</span>
+</td>
 </tr>
-<tr class="row bring">
-<td>Track 4 <span class="muted">(Track4)</span></td>
-<td class="mono">-10570</td>
-<td class="mono">-10445</td>
-<td><span class="status">Achse muss von -10570 nach -10445 fahren.</span></td>
+<tr class="row bring" data-axisid="69">
+<td>Shell1 <span class="muted">(Shell1)</span></td>
+<td class="mono" data-role="start">0</td>
+<td class="mono" data-role="target">1</td>
+<td>
+<span class="noticeText" data-role="unblockNotice" style="display:none"></span>
+<span class="status" data-role="statusText">Achse muss von 0 nach 1 fahren.</span>
+</td>
 </tr>
-<tr class="row ok">
-<td>Track 7 <span class="muted">(Track7)</span></td>
-<td class="mono">10445</td>
-<td class="mono">10445</td>
-<td><span class="status">Achse bleibt in diesem Cue auf 10445.</span></td>
+<tr class="row bring" data-axisid="70">
+<td>Shell2 <span class="muted">(Shell2)</span></td>
+<td class="mono" data-role="start">0</td>
+<td class="mono" data-role="target">1</td>
+<td>
+<span class="noticeText" data-role="unblockNotice" style="display:none"></span>
+<span class="status" data-role="statusText">Achse muss von 0 nach 1 fahren.</span>
+</td>
 </tr>
-<tr class="row ok">
-<td>Track 8 <span class="muted">(Track8)</span></td>
-<td class="mono">-10445</td>
-<td class="mono">-10445</td>
-<td><span class="status">Achse bleibt in diesem Cue auf -10445.</span></td>
+<tr class="row bring" data-axisid="71">
+<td>Shell3 <span class="muted">(Shell3)</span></td>
+<td class="mono" data-role="start">0</td>
+<td class="mono" data-role="target">1</td>
+<td>
+<span class="noticeText" data-role="unblockNotice" style="display:none"></span>
+<span class="status" data-role="statusText">Achse muss von 0 nach 1 fahren.</span>
+</td>
+</tr>
+<tr class="row bring" data-axisid="72">
+<td>Shell4 <span class="muted">(Shell4)</span></td>
+<td class="mono" data-role="start">0</td>
+<td class="mono" data-role="target">1</td>
+<td>
+<span class="noticeText" data-role="unblockNotice" style="display:none"></span>
+<span class="status" data-role="statusText">Achse muss von 0 nach 1 fahren.</span>
+</td>
+</tr>
+<tr class="row bring" data-axisid="73">
+<td>Shell5 <span class="muted">(Shell5)</span></td>
+<td class="mono" data-role="start">0</td>
+<td class="mono" data-role="target">1</td>
+<td>
+<span class="noticeText" data-role="unblockNotice" style="display:none"></span>
+<span class="status" data-role="statusText">Achse muss von 0 nach 1 fahren.</span>
+</td>
+</tr>
+<tr class="row bring" data-axisid="74">
+<td>Shell6 <span class="muted">(Shell6)</span></td>
+<td class="mono" data-role="start">0</td>
+<td class="mono" data-role="target">1</td>
+<td>
+<span class="noticeText" data-role="unblockNotice" style="display:none"></span>
+<span class="status" data-role="statusText">Achse muss von 0 nach 1 fahren.</span>
+</td>
+</tr>
+<tr class="row bring" data-axisid="75">
+<td>Shell7 <span class="muted">(Shell7)</span></td>
+<td class="mono" data-role="start">0</td>
+<td class="mono" data-role="target">1</td>
+<td>
+<span class="noticeText" data-role="unblockNotice" style="display:none"></span>
+<span class="status" data-role="statusText">Achse muss von 0 nach 1 fahren.</span>
+</td>
+</tr>
+<tr class="row bring" data-axisid="14">
+<td>SommerPostcard <span class="muted">(SPostC)</span></td>
+<td class="mono" data-role="start">9150</td>
+<td class="mono" data-role="target">2440</td>
+<td>
+<span class="noticeText" data-role="unblockNotice" style="display:none"></span>
+<span class="status" data-role="statusText">Achse muss von 9150 nach 2440 fahren.</span>
+</td>
+</tr>
+<tr class="row bring" data-axisid="65">
+<td>Summer Flipper <span class="muted">(SumFl)</span></td>
+<td class="mono" data-role="start">0</td>
+<td class="mono" data-role="target">900</td>
+<td>
+<span class="noticeText" data-role="unblockNotice" style="display:none"></span>
+<span class="status" data-role="statusText">Achse muss von 0 nach 900 fahren.</span>
+</td>
 </tr>
 </tbody>
 </table>
 </div>
 </div>
 </div>
-<div class="step" data-step-id="c:f:p34:cue34">
+<div class="step" data-step-id="c:f:p89:cue89" data-kind="cue" data-backward="0" data-disabled="0" data-cueid="89">
 <div class="stepHead">
 <div class="stepLeft">
 <div class="dragHandle" title="Verschieben">≡</div>
 <div class="stepIndex">3</div>
 <div class="stepTitle">
-<span class="dirBadge dirForward">Vorw&#228;rts 34</span>
-<span class="cueText">CQ 27 - Coro 1+2 IN</span>
+<span class="dirBadge dirForward">Vorw&#228;rts 89</span>
+<span class="cueText">AQ 15 - Shipwreck           LX 72</span>
 </div>
 </div>
 <div class="badges">
@@ -1139,7 +1624,9 @@ window.addEventListener('DOMContentLoaded', () => {
 <button class="miniBtn" type="button" data-move="up" title="Nach oben">&#x2191;</button>
 <button class="miniBtn" type="button" data-move="down" title="Nach unten">&#x2193;</button>
 </div>
-<span class="badge">Bringt auf Ziel: 2</span>
+<span class="badge notice" data-badge="unblock" style="display:none"></span>
+<span class="badge warn" data-badge="block" style="display:none"></span>
+<span class="badge" data-badge="affected">Bringt auf Ziel: 6</span>
 </div>
 </div>
 <div class="stepBody open">
@@ -1152,31 +1639,73 @@ window.addEventListener('DOMContentLoaded', () => {
 <th>Status</th>
 </tr></thead>
 <tbody>
-<tr class="row bring">
-<td>Coronation Hanger 1 <span class="muted">(Coro H 1)</span></td>
-<td class="mono">12000</td>
-<td class="mono">3350</td>
-<td><span class="status">Achse muss von 12000 nach 3350 fahren.</span></td>
+<tr class="row bring" data-axisid="36">
+<td>[AWall]  Arendelle Wall / <span class="muted">(AWinDS)</span></td>
+<td class="mono" data-role="start">0</td>
+<td class="mono" data-role="target">9440</td>
+<td>
+<span class="noticeText" data-role="unblockNotice" style="display:none"></span>
+<span class="status" data-role="statusText">Achse muss von 0 nach 9440 fahren.</span>
+</td>
 </tr>
-<tr class="row bring">
-<td>Coronation Hanger 2 <span class="muted">(Coro H 2)</span></td>
-<td class="mono">11900</td>
-<td class="mono">3350</td>
-<td><span class="status">Achse muss von 11900 nach 3350 fahren.</span></td>
+<tr class="row bring" data-axisid="17">
+<td>[AWall]  Arendelle Wall / <span class="muted">(AWinUS)</span></td>
+<td class="mono" data-role="start">0</td>
+<td class="mono" data-role="target">9440</td>
+<td>
+<span class="noticeText" data-role="unblockNotice" style="display:none"></span>
+<span class="status" data-role="statusText">Achse muss von 0 nach 9440 fahren.</span>
+</td>
+</tr>
+<tr class="row bring" data-axisid="63">
+<td>Arendel Portal 1 Travelle <span class="muted">(AP1 Tr)</span></td>
+<td class="mono" data-role="start">2440</td>
+<td class="mono" data-role="target">4400</td>
+<td>
+<span class="noticeText" data-role="unblockNotice" style="display:none"></span>
+<span class="status" data-role="statusText">Achse muss von 2440 nach 4400 fahren.</span>
+</td>
+</tr>
+<tr class="row bring" data-axisid="64">
+<td>Arendel Portal 2 Travelle <span class="muted">(AP2 Tr)</span></td>
+<td class="mono" data-role="start">1300</td>
+<td class="mono" data-role="target">4035</td>
+<td>
+<span class="noticeText" data-role="unblockNotice" style="display:none"></span>
+<span class="status" data-role="statusText">Achse muss von 1300 nach 4035 fahren.</span>
+</td>
+</tr>
+<tr class="row bring" data-axisid="3">
+<td>ArendelleDoor <span class="muted">(ADoor)</span></td>
+<td class="mono" data-role="start">0</td>
+<td class="mono" data-role="target">8700</td>
+<td>
+<span class="noticeText" data-role="unblockNotice" style="display:none"></span>
+<span class="status" data-role="statusText">Achse muss von 0 nach 8700 fahren.</span>
+</td>
+</tr>
+<tr class="row bring" data-axisid="6">
+<td>IceWalls4 <span class="muted">(IWall4)</span></td>
+<td class="mono" data-role="start">6463</td>
+<td class="mono" data-role="target">6382</td>
+<td>
+<span class="noticeText" data-role="unblockNotice" style="display:none"></span>
+<span class="status" data-role="statusText">Achse muss von 6463 nach 6382 fahren.</span>
+</td>
 </tr>
 </tbody>
 </table>
 </div>
 </div>
 </div>
-<div class="step" data-step-id="c:f:p319:cue319">
+<div class="step" data-step-id="c:f:p132:cue132" data-kind="cue" data-backward="0" data-disabled="0" data-cueid="132">
 <div class="stepHead">
 <div class="stepLeft">
 <div class="dragHandle" title="Verschieben">≡</div>
 <div class="stepIndex">4</div>
 <div class="stepTitle">
-<span class="dirBadge dirForward">Vorw&#228;rts 319</span>
-<span class="cueText">Preset 1.6 - Castle Chapel</span>
+<span class="dirBadge dirForward">Vorw&#228;rts 132</span>
+<span class="cueText">AQ 42 - Torchiere OFF</span>
 </div>
 </div>
 <div class="badges">
@@ -1184,7 +1713,9 @@ window.addEventListener('DOMContentLoaded', () => {
 <button class="miniBtn" type="button" data-move="up" title="Nach oben">&#x2191;</button>
 <button class="miniBtn" type="button" data-move="down" title="Nach unten">&#x2193;</button>
 </div>
-<span class="badge">Bringt auf Ziel: 7</span>
+<span class="badge notice" data-badge="unblock" style="display:none"></span>
+<span class="badge warn" data-badge="block">Sperren: 2</span>
+<span class="badge" data-badge="affected">Bringt auf Ziel: 4</span>
 </div>
 </div>
 <div class="stepBody open">
@@ -1197,103 +1728,82 @@ window.addEventListener('DOMContentLoaded', () => {
 <th>Status</th>
 </tr></thead>
 <tbody>
-<tr class="row bring">
-<td>Lichtleiter 2 SL <span class="muted">(LL2SL)</span></td>
-<td class="mono">2920</td>
-<td class="mono">3620</td>
-<td><span class="status">Achse muss von 2920 nach 3620 fahren.</span></td>
+<tr class="row warn" data-axisid="58">
+<td>Track 4 <span class="muted">(Track4)</span></td>
+<td class="mono" data-role="start">-10570</td>
+<td class="mono" data-role="target">-2073</td>
+<td>
+<span class="noticeText" data-role="unblockNotice" style="display:none"></span>
+<span class="status" data-role="statusText">In diesem Vorschlag wird die Achse gesperrt. Cue w&#252;rde sie sonst von -4835 nach -10445 fahren (Sprung-Ziel -2073).</span>
+</td>
 </tr>
-<tr class="row bring">
-<td>Lichtleiter 2 SR <span class="muted">(LL2SR)</span></td>
-<td class="mono">2920</td>
-<td class="mono">3620</td>
-<td><span class="status">Achse muss von 2920 nach 3620 fahren.</span></td>
+<tr class="row warn" data-axisid="60">
+<td>Track 7 <span class="muted">(Track7)</span></td>
+<td class="mono" data-role="start">10445</td>
+<td class="mono" data-role="target">9157</td>
+<td>
+<span class="noticeText" data-role="unblockNotice" style="display:none"></span>
+<span class="status" data-role="statusText">In diesem Vorschlag wird die Achse gesperrt. Cue w&#252;rde sie sonst von 4310 nach 11000 fahren (Sprung-Ziel 9157).</span>
+</td>
 </tr>
-<tr class="row bring">
-<td>Lichtleiter 3 SL <span class="muted">(LL3SL)</span></td>
-<td class="mono">2785</td>
-<td class="mono">1165</td>
-<td><span class="status">Achse muss von 2785 nach 1165 fahren.</span></td>
+<tr class="row bring" data-axisid="5">
+<td>Ice Wall 1 <span class="muted">(IWall1)</span></td>
+<td class="mono" data-role="start">9550</td>
+<td class="mono" data-role="target">6550</td>
+<td>
+<span class="noticeText" data-role="unblockNotice" style="display:none"></span>
+<span class="status" data-role="statusText">Achse muss von 9550 nach 6550 fahren.</span>
+</td>
 </tr>
-<tr class="row bring">
-<td>Lichtleiter 3 SR <span class="muted">(LL3SR)</span></td>
-<td class="mono">2785</td>
-<td class="mono">1165</td>
-<td><span class="status">Achse muss von 2785 nach 1165 fahren.</span></td>
+<tr class="row bring" data-axisid="11">
+<td>Ice Wall 2 <span class="muted">(IWall2)</span></td>
+<td class="mono" data-role="start">8950</td>
+<td class="mono" data-role="target">6529</td>
+<td>
+<span class="noticeText" data-role="unblockNotice" style="display:none"></span>
+<span class="status" data-role="statusText">Achse muss von 8950 nach 6529 fahren.</span>
+</td>
 </tr>
-<tr class="row bring">
-<td>Lichtleiter 5 SL <span class="muted">(LL5SL)</span></td>
-<td class="mono">1165</td>
-<td class="mono">3485</td>
-<td><span class="status">Achse muss von 1165 nach 3485 fahren.</span></td>
+<tr class="row bring" data-axisid="23">
+<td>Ice Wall 3 <span class="muted">(IWall3)</span></td>
+<td class="mono" data-role="start">11000</td>
+<td class="mono" data-role="target">6773</td>
+<td>
+<span class="noticeText" data-role="unblockNotice" style="display:none"></span>
+<span class="status" data-role="statusText">Achse muss von 11000 nach 6773 fahren.</span>
+</td>
 </tr>
-<tr class="row bring">
-<td>Lichtleiter 5 SR <span class="muted">(LL5SR)</span></td>
-<td class="mono">1165</td>
-<td class="mono">3485</td>
-<td><span class="status">Achse muss von 1165 nach 3485 fahren.</span></td>
+<tr class="row bring" data-axisid="56">
+<td>Track 3 <span class="muted">(Track3)</span></td>
+<td class="mono" data-role="start">9800</td>
+<td class="mono" data-role="target">12500</td>
+<td>
+<span class="noticeText" data-role="unblockNotice" style="display:none"></span>
+<span class="status" data-role="statusText">Achse muss von 9800 nach 12500 fahren.</span>
+</td>
 </tr>
-<tr class="row bring">
-<td>LX 5 <span class="muted">(LX 5)</span></td>
-<td class="mono">7361</td>
-<td class="mono">7165</td>
-<td><span class="status">Achse muss von 7361 nach 7165 fahren.</span></td>
-</tr>
-<tr class="row ok">
-<td>Lichtleiter 1 SL <span class="muted">(LL1SL)</span></td>
-<td class="mono">1165</td>
-<td class="mono">1165</td>
-<td><span class="status">Achse bleibt in diesem Cue auf 1165.</span></td>
-</tr>
-<tr class="row ok">
-<td>Lichtleiter 1 SR <span class="muted">(LL1SR)</span></td>
-<td class="mono">1165</td>
-<td class="mono">1165</td>
-<td><span class="status">Achse bleibt in diesem Cue auf 1165.</span></td>
-</tr>
-<tr class="row ok">
-<td>Lichtleiter 4 SL <span class="muted">(LL4SL)</span></td>
-<td class="mono">2920</td>
-<td class="mono">2920</td>
-<td><span class="status">Achse bleibt in diesem Cue auf 2920.</span></td>
-</tr>
-<tr class="row ok">
-<td>Lichtleiter 4 SR <span class="muted">(LL4SR)</span></td>
-<td class="mono">2920</td>
-<td class="mono">2920</td>
-<td><span class="status">Achse bleibt in diesem Cue auf 2920.</span></td>
-</tr>
-<tr class="row ok">
-<td>Lichtleiter 6 SL <span class="muted">(LL6SL)</span></td>
-<td class="mono">5125</td>
-<td class="mono">5125</td>
-<td><span class="status">Achse bleibt in diesem Cue auf 5125.</span></td>
-</tr>
-<tr class="row ok">
-<td>Lichtleiter 6 SR <span class="muted">(LL6SR)</span></td>
-<td class="mono">5125</td>
-<td class="mono">5125</td>
-<td><span class="status">Achse bleibt in diesem Cue auf 5125.</span></td>
-</tr>
-<tr class="row ok">
-<td>LX 3 <span class="muted">(LX 3)</span></td>
-<td class="mono">10615</td>
-<td class="mono">10615</td>
-<td><span class="status">Achse bleibt in diesem Cue auf 10615.</span></td>
+<tr class="row ok" data-axisid="62">
+<td>Track 8 <span class="muted">(Track8)</span></td>
+<td class="mono" data-role="start">-10445</td>
+<td class="mono" data-role="target">-10445</td>
+<td>
+<span class="noticeText" data-role="unblockNotice" style="display:none"></span>
+<span class="status" data-role="statusText">Achse bleibt in diesem Cue auf -10445.</span>
+</td>
 </tr>
 </tbody>
 </table>
 </div>
 </div>
 </div>
-<div class="step" data-step-id="c:f:p104:cue104">
+<div class="step" data-step-id="c:f:p135:cue135" data-kind="cue" data-backward="0" data-disabled="0" data-cueid="135">
 <div class="stepHead">
 <div class="stepLeft">
 <div class="dragHandle" title="Verschieben">≡</div>
 <div class="stepIndex">5</div>
 <div class="stepTitle">
-<span class="dirBadge dirForward">Vorw&#228;rts 104</span>
-<span class="cueText">AQ 28 - Track 1 ON (FL)</span>
+<span class="dirBadge dirForward">Vorw&#228;rts 135</span>
+<span class="cueText">AQ 45 - IceLegs ON (1 Sperre)</span>
 </div>
 </div>
 <div class="badges">
@@ -1301,7 +1811,9 @@ window.addEventListener('DOMContentLoaded', () => {
 <button class="miniBtn" type="button" data-move="up" title="Nach oben">&#x2191;</button>
 <button class="miniBtn" type="button" data-move="down" title="Nach unten">&#x2193;</button>
 </div>
-<span class="badge">Bringt auf Ziel: 1</span>
+<span class="badge notice" data-badge="unblock" style="display:none"></span>
+<span class="badge warn" data-badge="block">Sperren: 1</span>
+<span class="badge" data-badge="affected">Bringt auf Ziel: 4</span>
 </div>
 </div>
 <div class="stepBody open">
@@ -1314,25 +1826,64 @@ window.addEventListener('DOMContentLoaded', () => {
 <th>Status</th>
 </tr></thead>
 <tbody>
-<tr class="row bring">
-<td>Track 1 <span class="muted">(Track1)</span></td>
-<td class="mono">11700</td>
-<td class="mono">9988</td>
-<td><span class="status">Achse muss von 11700 nach 9988 fahren.</span></td>
+<tr class="row warn" data-axisid="90">
+<td>Ice Waterfall SR <span class="muted">(IWFSR)</span></td>
+<td class="mono" data-role="start">-6149</td>
+<td class="mono" data-role="target">-6149</td>
+<td>
+<span class="noticeText" data-role="unblockNotice" style="display:none"></span>
+<span class="status" data-role="statusText">In diesem Vorschlag wird die Achse gesperrt. Cue w&#252;rde sie sonst von -6149 nach -3764 fahren (Sprung-Ziel -6149).</span>
+</td>
+</tr>
+<tr class="row bring" data-axisid="85">
+<td>Ice Legs Traveller 1 SL <span class="muted">(ILT1SL)</span></td>
+<td class="mono" data-role="start">5090</td>
+<td class="mono" data-role="target">4291</td>
+<td>
+<span class="noticeText" data-role="unblockNotice" style="display:none"></span>
+<span class="status" data-role="statusText">Achse muss von 5090 nach 4291 fahren.</span>
+</td>
+</tr>
+<tr class="row bring" data-axisid="84">
+<td>Ice Legs Traveller 1 SR <span class="muted">(ILT1SR)</span></td>
+<td class="mono" data-role="start">-5090</td>
+<td class="mono" data-role="target">-4291</td>
+<td>
+<span class="noticeText" data-role="unblockNotice" style="display:none"></span>
+<span class="status" data-role="statusText">Achse muss von -5090 nach -4291 fahren.</span>
+</td>
+</tr>
+<tr class="row bring" data-axisid="87">
+<td>Ice Legs Traveller 2 SL <span class="muted">(ILT2SL)</span></td>
+<td class="mono" data-role="start">4388</td>
+<td class="mono" data-role="target">3520</td>
+<td>
+<span class="noticeText" data-role="unblockNotice" style="display:none"></span>
+<span class="status" data-role="statusText">Achse muss von 4388 nach 3520 fahren.</span>
+</td>
+</tr>
+<tr class="row bring" data-axisid="86">
+<td>Ice Legs Traveller 2 SR <span class="muted">(ILT2SR)</span></td>
+<td class="mono" data-role="start">-4380</td>
+<td class="mono" data-role="target">-3520</td>
+<td>
+<span class="noticeText" data-role="unblockNotice" style="display:none"></span>
+<span class="status" data-role="statusText">Achse muss von -4380 nach -3520 fahren.</span>
+</td>
 </tr>
 </tbody>
 </table>
 </div>
 </div>
 </div>
-<div class="step" data-step-id="c:f:p91:cue91">
+<div class="step" data-step-id="c:f:p145:cue145" data-kind="cue" data-backward="0" data-disabled="0" data-cueid="145">
 <div class="stepHead">
 <div class="stepLeft">
 <div class="dragHandle" title="Verschieben">≡</div>
 <div class="stepIndex">6</div>
 <div class="stepTitle">
-<span class="dirBadge dirForward">Vorw&#228;rts 91</span>
-<span class="cueText">AQ 17 - Gates IN (SM)</span>
+<span class="dirBadge dirForward">Vorw&#228;rts 145</span>
+<span class="cueText">AQ 55 - In Summer</span>
 </div>
 </div>
 <div class="badges">
@@ -1340,7 +1891,9 @@ window.addEventListener('DOMContentLoaded', () => {
 <button class="miniBtn" type="button" data-move="up" title="Nach oben">&#x2191;</button>
 <button class="miniBtn" type="button" data-move="down" title="Nach unten">&#x2193;</button>
 </div>
-<span class="badge">Bringt auf Ziel: 1</span>
+<span class="badge notice" data-badge="unblock">Entsperren: 1</span>
+<span class="badge warn" data-badge="block" style="display:none"></span>
+<span class="badge" data-badge="affected">Bringt auf Ziel: 2</span>
 </div>
 </div>
 <div class="stepBody open">
@@ -1353,11 +1906,368 @@ window.addEventListener('DOMContentLoaded', () => {
 <th>Status</th>
 </tr></thead>
 <tbody>
-<tr class="row bring">
-<td>Gates/USWall <span class="muted">(USWall)</span></td>
-<td class="mono">8700</td>
-<td class="mono">0</td>
-<td><span class="status">Achse muss von 8700 nach 0 fahren.</span></td>
+<tr class="row bring" data-axisid="60">
+<td>Track 7 <span class="muted">(Track7)</span></td>
+<td class="mono" data-role="start">10445</td>
+<td class="mono" data-role="target">9157</td>
+<td>
+<span class="noticeText" data-role="unblockNotice">Vor diesem Cue entsperren. </span>
+<span class="status" data-role="statusText">Achse muss von 10445 nach 9157 fahren.</span>
+</td>
+</tr>
+<tr class="row bring" data-axisid="88">
+<td>Umbrella &amp; Surfboard <span class="muted">(U + S)</span></td>
+<td class="mono" data-role="start">0</td>
+<td class="mono" data-role="target">663</td>
+<td>
+<span class="noticeText" data-role="unblockNotice" style="display:none"></span>
+<span class="status" data-role="statusText">Achse muss von 0 nach 663 fahren.</span>
+</td>
+</tr>
+<tr class="row ok" data-axisid="89">
+<td>Ice Waterfall SL <span class="muted">(IWFSL)</span></td>
+<td class="mono" data-role="start">6284</td>
+<td class="mono" data-role="target">6284</td>
+<td>
+<span class="noticeText" data-role="unblockNotice" style="display:none"></span>
+<span class="status" data-role="statusText">Achse bleibt in diesem Cue auf 6284.</span>
+</td>
+</tr>
+<tr class="row ok" data-axisid="90">
+<td>Ice Waterfall SR <span class="muted">(IWFSR)</span></td>
+<td class="mono" data-role="start">-6149</td>
+<td class="mono" data-role="target">-6149</td>
+<td>
+<span class="noticeText" data-role="unblockNotice" style="display:none"></span>
+<span class="status" data-role="statusText">Achse bleibt in diesem Cue auf -6149.</span>
+</td>
+</tr>
+<tr class="row ok" data-axisid="66">
+<td>Items 1 <span class="muted">(Itmes1)</span></td>
+<td class="mono" data-role="start">900</td>
+<td class="mono" data-role="target">900</td>
+<td>
+<span class="noticeText" data-role="unblockNotice" style="display:none"></span>
+<span class="status" data-role="statusText">Achse bleibt in diesem Cue auf 900.</span>
+</td>
+</tr>
+<tr class="row ok" data-axisid="96">
+<td>Items 2 <span class="muted">(Items2)</span></td>
+<td class="mono" data-role="start">900</td>
+<td class="mono" data-role="target">900</td>
+<td>
+<span class="noticeText" data-role="unblockNotice" style="display:none"></span>
+<span class="status" data-role="statusText">Achse bleibt in diesem Cue auf 900.</span>
+</td>
+</tr>
+<tr class="row ok" data-axisid="14">
+<td>SommerPostcard <span class="muted">(SPostC)</span></td>
+<td class="mono" data-role="start">2440</td>
+<td class="mono" data-role="target">2440</td>
+<td>
+<span class="noticeText" data-role="unblockNotice" style="display:none"></span>
+<span class="status" data-role="statusText">Achse bleibt in diesem Cue auf 2440.</span>
+</td>
+</tr>
+<tr class="row ok" data-axisid="65">
+<td>Summer Flipper <span class="muted">(SumFl)</span></td>
+<td class="mono" data-role="start">900</td>
+<td class="mono" data-role="target">900</td>
+<td>
+<span class="noticeText" data-role="unblockNotice" style="display:none"></span>
+<span class="status" data-role="statusText">Achse bleibt in diesem Cue auf 900.</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="step" data-step-id="c:b:p55:cue55" data-kind="cue" data-backward="1" data-disabled="0" data-cueid="55">
+<div class="stepHead">
+<div class="stepLeft">
+<div class="dragHandle" title="Verschieben">≡</div>
+<div class="stepIndex">7</div>
+<div class="stepTitle">
+<span class="dirBadge dirBackward">R&#252;ckw&#228;rts 55</span>
+<span class="cueText">Preset 6 - ArendellePortal 1 Preset</span>
+</div>
+</div>
+<div class="badges">
+<div class="reorderBtns">
+<button class="miniBtn" type="button" data-move="up" title="Nach oben">&#x2191;</button>
+<button class="miniBtn" type="button" data-move="down" title="Nach unten">&#x2193;</button>
+</div>
+<span class="badge notice" data-badge="unblock" style="display:none"></span>
+<span class="badge warn" data-badge="block" style="display:none"></span>
+<span class="badge" data-badge="affected">Bringt auf Ziel: 2</span>
+</div>
+</div>
+<div class="stepBody open">
+<div class="tableWrap">
+<table>
+<thead><tr>
+<th>Achse</th>
+<th class="mono">Sprung-Start</th>
+<th class="mono">Sprung-Ziel</th>
+<th>Status</th>
+</tr></thead>
+<tbody>
+<tr class="row bring" data-axisid="33">
+<td>[Apo1]  Arendelle Portal <span class="muted">(APorDS)</span></td>
+<td class="mono" data-role="start">0</td>
+<td class="mono" data-role="target">9000</td>
+<td>
+<span class="noticeText" data-role="unblockNotice" style="display:none"></span>
+<span class="status" data-role="statusText">Achse muss von 0 nach 9000 fahren.</span>
+</td>
+</tr>
+<tr class="row bring" data-axisid="9">
+<td>[Apo1]  Arendelle Portal <span class="muted">(APorUS)</span></td>
+<td class="mono" data-role="start">0</td>
+<td class="mono" data-role="target">9000</td>
+<td>
+<span class="noticeText" data-role="unblockNotice" style="display:none"></span>
+<span class="status" data-role="statusText">Achse muss von 0 nach 9000 fahren.</span>
+</td>
+</tr>
+<tr class="row ok" data-axisid="63">
+<td>Arendel Portal 1 Travelle <span class="muted">(AP1 Tr)</span></td>
+<td class="mono" data-role="start">4400</td>
+<td class="mono" data-role="target">4400</td>
+<td>
+<span class="noticeText" data-role="unblockNotice" style="display:none"></span>
+<span class="status" data-role="statusText">Achse bleibt in diesem Cue auf 4400.</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="step" data-step-id="c:b:p28:cue28" data-kind="cue" data-backward="1" data-disabled="0" data-cueid="28">
+<div class="stepHead">
+<div class="stepLeft">
+<div class="dragHandle" title="Verschieben">≡</div>
+<div class="stepIndex">8</div>
+<div class="stepTitle">
+<span class="dirBadge dirBackward">R&#252;ckw&#228;rts 28</span>
+<span class="cueText">CQ 18 - AP2 IN</span>
+</div>
+</div>
+<div class="badges">
+<div class="reorderBtns">
+<button class="miniBtn" type="button" data-move="up" title="Nach oben">&#x2191;</button>
+<button class="miniBtn" type="button" data-move="down" title="Nach unten">&#x2193;</button>
+</div>
+<span class="badge notice" data-badge="unblock" style="display:none"></span>
+<span class="badge warn" data-badge="block" style="display:none"></span>
+<span class="badge" data-badge="affected">Bringt auf Ziel: 2</span>
+</div>
+</div>
+<div class="stepBody open">
+<div class="tableWrap">
+<table>
+<thead><tr>
+<th>Achse</th>
+<th class="mono">Sprung-Start</th>
+<th class="mono">Sprung-Ziel</th>
+<th>Status</th>
+</tr></thead>
+<tbody>
+<tr class="row bring" data-axisid="10">
+<td>[APort2]  Arendelle Portal <span class="muted">(APor 2)</span></td>
+<td class="mono" data-role="start">0</td>
+<td class="mono" data-role="target">7990</td>
+<td>
+<span class="noticeText" data-role="unblockNotice" style="display:none"></span>
+<span class="status" data-role="statusText">Achse muss von 0 nach 7990 fahren.</span>
+</td>
+</tr>
+<tr class="row bring" data-axisid="15">
+<td>[APort2]  Arendelle Portal <span class="muted">(APor 3)</span></td>
+<td class="mono" data-role="start">0</td>
+<td class="mono" data-role="target">7990</td>
+<td>
+<span class="noticeText" data-role="unblockNotice" style="display:none"></span>
+<span class="status" data-role="statusText">Achse muss von 0 nach 7990 fahren.</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="step" data-step-id="c:f:p144:cue144" data-kind="cue" data-backward="0" data-disabled="0" data-cueid="144">
+<div class="stepHead">
+<div class="stepLeft">
+<div class="dragHandle" title="Verschieben">≡</div>
+<div class="stepIndex">9</div>
+<div class="stepTitle">
+<span class="dirBadge dirForward">Vorw&#228;rts 144</span>
+<span class="cueText">AQ 54 - Glove IN (Part 3)</span>
+</div>
+</div>
+<div class="badges">
+<div class="reorderBtns">
+<button class="miniBtn" type="button" data-move="up" title="Nach oben">&#x2191;</button>
+<button class="miniBtn" type="button" data-move="down" title="Nach unten">&#x2193;</button>
+</div>
+<span class="badge notice" data-badge="unblock" style="display:none"></span>
+<span class="badge warn" data-badge="block" style="display:none"></span>
+<span class="badge" data-badge="affected">Bringt auf Ziel: 1</span>
+</div>
+</div>
+<div class="stepBody open">
+<div class="tableWrap">
+<table>
+<thead><tr>
+<th>Achse</th>
+<th class="mono">Sprung-Start</th>
+<th class="mono">Sprung-Ziel</th>
+<th>Status</th>
+</tr></thead>
+<tbody>
+<tr class="row bring" data-axisid="67">
+<td>Glove <span class="muted">(Glove)</span></td>
+<td class="mono" data-role="start">7450</td>
+<td class="mono" data-role="target">0</td>
+<td>
+<span class="noticeText" data-role="unblockNotice" style="display:none"></span>
+<span class="status" data-role="statusText">Achse muss von 7450 nach 0 fahren.</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="step" data-step-id="c:f:p136:cue136" data-kind="cue" data-backward="0" data-disabled="0" data-cueid="136">
+<div class="stepHead">
+<div class="stepLeft">
+<div class="dragHandle" title="Verschieben">≡</div>
+<div class="stepIndex">10</div>
+<div class="stepTitle">
+<span class="dirBadge dirForward">Vorw&#228;rts 136</span>
+<span class="cueText">AQ 45.5 - IceStrike OFF (SM)</span>
+</div>
+</div>
+<div class="badges">
+<div class="reorderBtns">
+<button class="miniBtn" type="button" data-move="up" title="Nach oben">&#x2191;</button>
+<button class="miniBtn" type="button" data-move="down" title="Nach unten">&#x2193;</button>
+</div>
+<span class="badge notice" data-badge="unblock" style="display:none"></span>
+<span class="badge warn" data-badge="block" style="display:none"></span>
+<span class="badge" data-badge="affected">Bringt auf Ziel: 1</span>
+</div>
+</div>
+<div class="stepBody open">
+<div class="tableWrap">
+<table>
+<thead><tr>
+<th>Achse</th>
+<th class="mono">Sprung-Start</th>
+<th class="mono">Sprung-Ziel</th>
+<th>Status</th>
+</tr></thead>
+<tbody>
+<tr class="row bring" data-axisid="55">
+<td>Track 1 <span class="muted">(Track1)</span></td>
+<td class="mono" data-role="start">11700</td>
+<td class="mono" data-role="target">9988</td>
+<td>
+<span class="noticeText" data-role="unblockNotice" style="display:none"></span>
+<span class="status" data-role="statusText">Achse muss von 11700 nach 9988 fahren.</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="step" data-step-id="c:b:p58:cue58" data-kind="cue" data-backward="1" data-disabled="0" data-cueid="58">
+<div class="stepHead">
+<div class="stepLeft">
+<div class="dragHandle" title="Verschieben">≡</div>
+<div class="stepIndex">11</div>
+<div class="stepTitle">
+<span class="dirBadge dirBackward">R&#252;ckw&#228;rts 58</span>
+<span class="cueText">Preset 9 - Chandelier Doppelshow Pre</span>
+</div>
+</div>
+<div class="badges">
+<div class="reorderBtns">
+<button class="miniBtn" type="button" data-move="up" title="Nach oben">&#x2191;</button>
+<button class="miniBtn" type="button" data-move="down" title="Nach unten">&#x2193;</button>
+</div>
+<span class="badge notice" data-badge="unblock" style="display:none"></span>
+<span class="badge warn" data-badge="block" style="display:none"></span>
+<span class="badge" data-badge="affected">Bringt auf Ziel: 1</span>
+</div>
+</div>
+<div class="stepBody open">
+<div class="tableWrap">
+<table>
+<thead><tr>
+<th>Achse</th>
+<th class="mono">Sprung-Start</th>
+<th class="mono">Sprung-Ziel</th>
+<th>Status</th>
+</tr></thead>
+<tbody>
+<tr class="row bring" data-axisid="54">
+<td>Chandelier <span class="muted">(Chande)</span></td>
+<td class="mono" data-role="start">11600</td>
+<td class="mono" data-role="target">11000</td>
+<td>
+<span class="noticeText" data-role="unblockNotice" style="display:none"></span>
+<span class="status" data-role="statusText">Achse muss von 11600 nach 11000 fahren.</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="step" data-step-id="m:58:DKOcd6Xs" data-kind="manual" data-backward="0" data-disabled="0" data-axisid="58">
+<div class="stepHead">
+<div class="stepLeft">
+<div class="dragHandle" title="Verschieben">≡</div>
+<div class="stepIndex">12</div>
+<div class="stepTitle">
+<span class="dirBadge dirForward">Positionsfahrt</span>
+<span class="cueText">Track4</span>
+</div>
+</div>
+<div class="badges">
+<div class="reorderBtns">
+<button class="miniBtn" type="button" data-move="up" title="Nach oben">&#x2191;</button>
+<button class="miniBtn" type="button" data-move="down" title="Nach unten">&#x2193;</button>
+</div>
+<span class="badge notice" data-badge="unblock">Entsperren: 1</span>
+<span class="badge warn" data-badge="block" style="display:none"></span>
+<span class="badge" data-badge="affected">Auf Position -2073</span>
+</div>
+</div>
+<div class="stepBody open">
+<div class="tableWrap">
+<table>
+<thead><tr>
+<th>Achse</th>
+<th class="mono">Sprung-Start</th>
+<th class="mono">Sprung-Ziel</th>
+<th>Status</th>
+</tr></thead>
+<tbody>
+<tr class="row bring" data-axisid="58">
+<td>Track 4 <span class="muted">(Track4)</span></td>
+<td class="mono" data-role="start">-10570</td>
+<td class="mono" data-role="target">-2073</td>
+<td>
+<span class="noticeText" data-role="unblockNotice">Vor dieser Positionsfahrt entsperren. </span>
+<span class="status" data-role="statusText">Achse muss von -10570 nach -2073 fahren.</span>
+</td>
 </tr>
 </tbody>
 </table>
