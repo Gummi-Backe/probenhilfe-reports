@@ -173,8 +173,15 @@
     const overlay = document.getElementById('helpOverlay');
     const closeBtn = document.getElementById('helpCloseBtn');
     if (!helpBtn || !overlay) return;
-    const open = () => overlay.classList.add('open');
-    const close = () => overlay.classList.remove('open');
+
+    const syncBodyClass = () => {
+      const anyOpen = !!document.querySelector('.overlay.open');
+      document.body.classList.toggle('modalOpen', anyOpen);
+    };
+
+    const open = () => { overlay.classList.add('open'); syncBodyClass(); };
+    const close = () => { overlay.classList.remove('open'); syncBodyClass(); };
+
     helpBtn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); open(); });
     closeBtn?.addEventListener('click', (e) => { e.preventDefault(); close(); });
     overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
@@ -186,12 +193,17 @@
     const overlay = document.getElementById('axesOverlay');
     const closeBtn = document.getElementById('axesCloseBtn');
     if (!btn || !overlay) return;
+    const syncBodyClass = () => {
+      const anyOpen = !!document.querySelector('.overlay.open');
+      document.body.classList.toggle('modalOpen', anyOpen);
+    };
     const open = async () => {
       await ensureAxisMetaLoaded(false);
       renderAxesOverlay();
       overlay.classList.add('open');
+      syncBodyClass();
     };
-    const close = () => overlay.classList.remove('open');
+    const close = () => { overlay.classList.remove('open'); syncBodyClass(); };
     btn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); open(); });
     closeBtn?.addEventListener('click', (e) => { e.preventDefault(); close(); });
     overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
@@ -889,19 +901,24 @@
             <button class="btn iconBtn" id="helpCloseBtn" type="button" title="Schließen" aria-label="Schließen">&#x2715;</button>
           </div>
           <div class="modalBody">
-            <p>Diese Seite zeigt die zuletzt in Probenhilfe veröffentlichte Cue-Sequenz. Du kannst die Reihenfolge ändern.</p>
+            <p>Diese Seite zeigt die zuletzt in Probenhilfe veröffentlichte Cue-Sequenz. Du kannst die Reihenfolge ändern – die Details werden dabei sofort neu berechnet.</p>
             <h3>Ein-/Ausklappen</h3>
             <ul>
+              <li>Tippe auf einen Cue-Kopf, um genau diesen Cue ein- oder auszuklappen.</li>
               <li><span class="kbd">&#9776;</span> Kompaktmodus (gut zum Sortieren).</li>
               <li><span class="kbd">&#x25BE;</span> Alles einklappen.</li>
               <li><span class="kbd">&#x25B4;</span> Alles ausklappen.</li>
-              <li>Tippe auf einen Cue-Kopf, um genau diesen Cue ein- oder auszuklappen.</li>
             </ul>
             <h3>Sortieren</h3>
             <ul>
               <li>Zum Verschieben am <span class="kbd">=</span>-Griff ziehen.</li>
               <li>Im Kompaktmodus helfen die <span class="kbd">↑</span>/<span class="kbd">↓</span>-Buttons.</li>
-              <li><span class="kbd">&#x21BB;</span> Sortierung aktualisieren: lädt die aktuell gespeicherte Sortierung aus der Cloud.</li>
+              <li>Nach einer Änderung wird die Sortierung automatisch (kurz verzögert) in die Cloud gespeichert.</li>
+              <li><span class="kbd">&#x21BB;</span> Sortierung aktualisieren: lädt die aktuell gespeicherte Sortierung aus der Cloud (überschreibt deine lokale).</li>
+            </ul>
+            <h3>Achsen</h3>
+            <ul>
+              <li><span class="kbd">&#x25A6;</span> Zeigt die Zielwerte der Achsen für den aktuellen Cue-Sprung (wie in der App).</li>
             </ul>
           </div>
         </div>
