@@ -498,6 +498,9 @@ if ('serviceWorker' in navigator) {
 
 </script>
 <script>
+const FIREBASE_DB_BASE = "https://probenhilfe-sync-default-rtdb.europe-west1.firebasedatabase.app";
+const FIREBASE_SESSION_PATH = "sessions/current";
+let _lastRemoteRev = null;
 
 function updateStepIndices(stepsEl){
   const items = Array.from(stepsEl.querySelectorAll('.step'));
@@ -583,6 +586,7 @@ function moveStep(step, direction){
     parent.insertBefore(b, a);
   }
   updateStepIndices(parent);
+  notifyOrderChanged();
 
   const aLast = a.getBoundingClientRect();
   const bLast = b.getBoundingClientRect();
@@ -716,6 +720,7 @@ function enablePointerReorder(stepsEl){
     const parent = step.parentNode;
     dragging = null;
     if (parent) updateStepIndices(parent);
+    notifyOrderChanged();
   }
 
   function onMove(clientX, clientY){
@@ -793,10 +798,124 @@ function enableHelp(){
   });
 }
 
+function firebaseUrl(path){
+  if (!FIREBASE_DB_BASE) return null;
+  const base = String(FIREBASE_DB_BASE).replace(/\/+$/,''); 
+  const p = String(path || '').replace(/^\/+/,''); 
+  return `${base}/${p}.json`;
+}
+
+async function firebaseGet(path){
+  const url = firebaseUrl(path);
+  if (!url) return null;
+  const res = await fetch(url, { cache: 'no-store' });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return await res.json();
+}
+
+async function firebasePatch(path, body){
+  const url = firebaseUrl(path);
+  if (!url) return;
+  const res = await fetch(url, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body || {})
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+}
+
+function collectOrdersFromDom(){
+  const orders = {};
+  document.querySelectorAll('section.section[data-sid]').forEach(section => {
+    const sid = section.dataset.sid;
+    if (!sid) return;
+    const stepsEl = section.querySelector('.steps');
+    if (!stepsEl) return;
+    const ids = Array.from(stepsEl.querySelectorAll(':scope > .step')).map(el => el.dataset.stepId).filter(Boolean);
+    orders[sid] = ids;
+  });
+  return orders;
+}
+
+function applyOrdersToDom(orders){
+  if (!orders) return;
+  document.querySelectorAll('section.section[data-sid]').forEach(section => {
+    const sid = section.dataset.sid;
+    const desired = sid ? orders[sid] : null;
+    if (!Array.isArray(desired) || desired.length === 0) return;
+    const stepsEl = section.querySelector('.steps');
+    if (!stepsEl) return;
+
+    const all = Array.from(stepsEl.querySelectorAll(':scope > .step'));
+    const byId = new Map(all.map(el => [el.dataset.stepId, el]));
+    const used = new Set();
+    const newOrder = [];
+    desired.forEach(id => {
+      const el = byId.get(id);
+      if (el){
+        newOrder.push(el);
+        used.add(id);
+      }
+    });
+    all.forEach(el => {
+      const id = el.dataset.stepId;
+      if (!used.has(id)) newOrder.push(el);
+    });
+    newOrder.forEach(el => stepsEl.appendChild(el));
+    updateStepIndices(stepsEl);
+  });
+}
+
+let _saveTimer = null;
+function notifyOrderChanged(){
+  if (!FIREBASE_DB_BASE) return;
+  if (_saveTimer) window.clearTimeout(_saveTimer);
+  _saveTimer = window.setTimeout(async () => {
+    _saveTimer = null;
+    try{
+      const rev = Date.now();
+      const orders = collectOrdersFromDom();
+      await firebasePatch(FIREBASE_SESSION_PATH, {
+        rev,
+        updatedAt: { '.sv': 'timestamp' },
+        orders
+      });
+      _lastRemoteRev = rev;
+    }catch(_e){
+      // sync optional
+    }
+  }, 600);
+}
+
+async function refreshOrderFromFirebase(){
+  try{
+    const data = await firebaseGet(FIREBASE_SESSION_PATH);
+    if (!data || !data.orders) return;
+    if (data.rev != null) _lastRemoteRev = data.rev;
+    applyOrdersToDom(data.orders);
+  }catch(_e){
+    // sync optional
+  }
+}
+
+function enableFirebaseSync(){
+  const btn = document.getElementById('syncRefreshBtn');
+  if (btn){
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      refreshOrderFromFirebase();
+    });
+  }
+  // initial pull (keine Live-Aktualisierung)
+  refreshOrderFromFirebase();
+}
+
 window.addEventListener('DOMContentLoaded', () => {
   enableCollapse();
   enableReorderButtons();
   enableHelp();
+  enableFirebaseSync();
   // Standard: ausgeklappt
   setAllCollapsed(false);
   document.querySelectorAll('.steps').forEach((stepsEl) => enablePointerReorder(stepsEl));
@@ -811,6 +930,7 @@ window.addEventListener('DOMContentLoaded', () => {
 <label class="toggle" title="Kompaktmodus (zum Sortieren)"><input id="compactToggle" type="checkbox"/><span class="toggleIcon">&#9776;</span></label>
 </div>
 <div class="toolbarRight">
+<button class="btn iconBtn" id="syncRefreshBtn" type="button" title="Sortierung aktualisieren" aria-label="Sortierung aktualisieren">&#x21BB;</button>
 <button class="btn iconBtn helpBtn" id="helpBtn" type="button" title="Hilfe" aria-label="Hilfe">?</button>
 <button class="btn iconBtn" id="collapseAllBtn" type="button" title="Alles einklappen" aria-label="Alles einklappen">&#x25BE;</button>
 <button class="btn iconBtn" id="expandAllBtn" type="button" title="Alles ausklappen" aria-label="Alles ausklappen">&#x25B4;</button>
@@ -854,9 +974,9 @@ window.addEventListener('DOMContentLoaded', () => {
 <div class="header">
 <div>
 <div class="title">Probenhilfe - Cue-Sequenz</div>
-<div class="subtitle">Sprung: AQ 29.7 - Coro 1 IN (AQ GO) → AQ 28 - Track 1 ON (FL)</div>
+<div class="subtitle">Sprung: AQ 13 - DYWBA Snowman (CLEAR) → AQ 29.7 - Coro 1 IN (AQ GO)</div>
 </div>
-<div class="meta">Export: 2026-01-19 10:46:27<br/><span class="muted">Quelle: Probenhilfe</span></div>
+<div class="meta">Export: 2026-01-19 11:59:17<br/><span class="muted">Quelle: Probenhilfe</span></div>
 </div>
 <div class="legend">
 <div class="chip"><span class="dot bring"></span>Bringt auf Ziel</div>
@@ -865,20 +985,20 @@ window.addEventListener('DOMContentLoaded', () => {
 <div class="chip"><span class="dot neutral"></span>Sonstiges</div>
 <div class="chip"><span class="dot" style="background:var(--notice)"></span>Vor diesem Cue entsperren</div>
 </div>
-<section class="section">
+<section class="section" data-sid="IP9KVKQluTEu">
 <div class="sectionHead">
-<div class="sectionTitle">Empfohlene Cue-Sequenz f&#252;r den Sprung von AQ 29.7 - Coro 1 IN (AQ GO) nach AQ 28 - Track 1 ON (FL)</div>
-<div class="sectionSummary">Deckt 5 von 5 ben&#246;tigten Achsen ab.</div>
+<div class="sectionTitle">Empfohlene Cue-Sequenz f&#252;r den Sprung von AQ 13 - DYWBA Snowman (CLEAR) nach AQ 29.7 - Coro 1 IN (AQ GO)</div>
+<div class="sectionSummary">Deckt 19 von 19 ben&#246;tigten Achsen ab.</div>
 </div>
 <div class="steps">
-<div class="step">
+<div class="step" data-step-id="c:f:p319:cue319">
 <div class="stepHead">
 <div class="stepLeft">
 <div class="dragHandle" title="Verschieben">≡</div>
 <div class="stepIndex">1</div>
 <div class="stepTitle">
-<span class="dirBadge dirBackward">R&#252;ckw&#228;rts 105</span>
-<span class="cueText">AQ 29 - Great Hall         LX 117</span>
+<span class="dirBadge dirForward">Vorw&#228;rts 319</span>
+<span class="cueText">Preset 1.6 - Castle Chapel</span>
 </div>
 </div>
 <div class="badges">
@@ -886,7 +1006,257 @@ window.addEventListener('DOMContentLoaded', () => {
 <button class="miniBtn" type="button" data-move="up" title="Nach oben">&#x2191;</button>
 <button class="miniBtn" type="button" data-move="down" title="Nach unten">&#x2193;</button>
 </div>
-<span class="badge">Bringt auf Ziel: 4</span>
+<span class="badge">Bringt auf Ziel: 7</span>
+</div>
+</div>
+<div class="stepBody open">
+<div class="tableWrap">
+<table>
+<thead><tr>
+<th>Achse</th>
+<th class="mono">Sprung-Start</th>
+<th class="mono">Sprung-Ziel</th>
+<th>Status</th>
+</tr></thead>
+<tbody>
+<tr class="row bring">
+<td>Lichtleiter 2 SL <span class="muted">(LL2SL)</span></td>
+<td class="mono">2920</td>
+<td class="mono">3620</td>
+<td><span class="status">Achse muss von 2920 nach 3620 fahren.</span></td>
+</tr>
+<tr class="row bring">
+<td>Lichtleiter 2 SR <span class="muted">(LL2SR)</span></td>
+<td class="mono">2920</td>
+<td class="mono">3620</td>
+<td><span class="status">Achse muss von 2920 nach 3620 fahren.</span></td>
+</tr>
+<tr class="row bring">
+<td>Lichtleiter 3 SL <span class="muted">(LL3SL)</span></td>
+<td class="mono">2785</td>
+<td class="mono">1165</td>
+<td><span class="status">Achse muss von 2785 nach 1165 fahren.</span></td>
+</tr>
+<tr class="row bring">
+<td>Lichtleiter 3 SR <span class="muted">(LL3SR)</span></td>
+<td class="mono">2785</td>
+<td class="mono">1165</td>
+<td><span class="status">Achse muss von 2785 nach 1165 fahren.</span></td>
+</tr>
+<tr class="row bring">
+<td>Lichtleiter 5 SL <span class="muted">(LL5SL)</span></td>
+<td class="mono">1165</td>
+<td class="mono">3485</td>
+<td><span class="status">Achse muss von 1165 nach 3485 fahren.</span></td>
+</tr>
+<tr class="row bring">
+<td>Lichtleiter 5 SR <span class="muted">(LL5SR)</span></td>
+<td class="mono">1165</td>
+<td class="mono">3485</td>
+<td><span class="status">Achse muss von 1165 nach 3485 fahren.</span></td>
+</tr>
+<tr class="row bring">
+<td>LX 5 <span class="muted">(LX 5)</span></td>
+<td class="mono">7361</td>
+<td class="mono">7165</td>
+<td><span class="status">Achse muss von 7361 nach 7165 fahren.</span></td>
+</tr>
+<tr class="row ok">
+<td>Lichtleiter 1 SL <span class="muted">(LL1SL)</span></td>
+<td class="mono">1165</td>
+<td class="mono">1165</td>
+<td><span class="status">Achse bleibt in diesem Cue auf 1165.</span></td>
+</tr>
+<tr class="row ok">
+<td>Lichtleiter 1 SR <span class="muted">(LL1SR)</span></td>
+<td class="mono">1165</td>
+<td class="mono">1165</td>
+<td><span class="status">Achse bleibt in diesem Cue auf 1165.</span></td>
+</tr>
+<tr class="row ok">
+<td>Lichtleiter 4 SL <span class="muted">(LL4SL)</span></td>
+<td class="mono">2920</td>
+<td class="mono">2920</td>
+<td><span class="status">Achse bleibt in diesem Cue auf 2920.</span></td>
+</tr>
+<tr class="row ok">
+<td>Lichtleiter 4 SR <span class="muted">(LL4SR)</span></td>
+<td class="mono">2920</td>
+<td class="mono">2920</td>
+<td><span class="status">Achse bleibt in diesem Cue auf 2920.</span></td>
+</tr>
+<tr class="row ok">
+<td>Lichtleiter 6 SL <span class="muted">(LL6SL)</span></td>
+<td class="mono">5125</td>
+<td class="mono">5125</td>
+<td><span class="status">Achse bleibt in diesem Cue auf 5125.</span></td>
+</tr>
+<tr class="row ok">
+<td>Lichtleiter 6 SR <span class="muted">(LL6SR)</span></td>
+<td class="mono">5125</td>
+<td class="mono">5125</td>
+<td><span class="status">Achse bleibt in diesem Cue auf 5125.</span></td>
+</tr>
+<tr class="row ok">
+<td>LX 3 <span class="muted">(LX 3)</span></td>
+<td class="mono">10615</td>
+<td class="mono">10615</td>
+<td><span class="status">Achse bleibt in diesem Cue auf 10615.</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="step" data-step-id="c:f:p89:cue89">
+<div class="stepHead">
+<div class="stepLeft">
+<div class="dragHandle" title="Verschieben">≡</div>
+<div class="stepIndex">2</div>
+<div class="stepTitle">
+<span class="dirBadge dirForward">Vorw&#228;rts 89</span>
+<span class="cueText">AQ 15 - Shipwreck           LX 72 (1 Sperre)</span>
+</div>
+</div>
+<div class="badges">
+<div class="reorderBtns">
+<button class="miniBtn" type="button" data-move="up" title="Nach oben">&#x2191;</button>
+<button class="miniBtn" type="button" data-move="down" title="Nach unten">&#x2193;</button>
+</div>
+<span class="badge warn">Sperren: 1</span>
+<span class="badge">Bringt auf Ziel: 5</span>
+</div>
+</div>
+<div class="stepBody open">
+<div class="tableWrap">
+<table>
+<thead><tr>
+<th>Achse</th>
+<th class="mono">Sprung-Start</th>
+<th class="mono">Sprung-Ziel</th>
+<th>Status</th>
+</tr></thead>
+<tbody>
+<tr class="row warn">
+<td>IceWalls4 <span class="muted">(IWall4)</span></td>
+<td class="mono">6463</td>
+<td class="mono">6463</td>
+<td><span class="status">In diesem Vorschlag wird die Achse gesperrt. Cue w&#252;rde sie sonst von 6463 nach 6382 fahren (Sprung-Ziel 6463).</span></td>
+</tr>
+<tr class="row bring">
+<td>[AWall]  Arendelle Wall / <span class="muted">(AWinDS)</span></td>
+<td class="mono">0</td>
+<td class="mono">9440</td>
+<td><span class="status">Achse muss von 0 nach 9440 fahren.</span></td>
+</tr>
+<tr class="row bring">
+<td>[AWall]  Arendelle Wall / <span class="muted">(AWinUS)</span></td>
+<td class="mono">0</td>
+<td class="mono">9440</td>
+<td><span class="status">Achse muss von 0 nach 9440 fahren.</span></td>
+</tr>
+<tr class="row bring">
+<td>Arendel Portal 1 Travelle <span class="muted">(AP1 Tr)</span></td>
+<td class="mono">2440</td>
+<td class="mono">4400</td>
+<td><span class="status">Achse muss von 2440 nach 4400 fahren.</span></td>
+</tr>
+<tr class="row bring">
+<td>Arendel Portal 2 Travelle <span class="muted">(AP2 Tr)</span></td>
+<td class="mono">1300</td>
+<td class="mono">4035</td>
+<td><span class="status">Achse muss von 1300 nach 4035 fahren.</span></td>
+</tr>
+<tr class="row bring">
+<td>ArendelleDoor <span class="muted">(ADoor)</span></td>
+<td class="mono">0</td>
+<td class="mono">8700</td>
+<td><span class="status">Achse muss von 0 nach 8700 fahren.</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="step" data-step-id="c:b:p122:cue122">
+<div class="stepHead">
+<div class="stepLeft">
+<div class="dragHandle" title="Verschieben">≡</div>
+<div class="stepIndex">3</div>
+<div class="stepTitle">
+<span class="dirBadge dirBackward">R&#252;ckw&#228;rts 122</span>
+<span class="cueText">AQ 36 - Tracks ON Torchieres</span>
+</div>
+</div>
+<div class="badges">
+<div class="reorderBtns">
+<button class="miniBtn" type="button" data-move="up" title="Nach oben">&#x2191;</button>
+<button class="miniBtn" type="button" data-move="down" title="Nach unten">&#x2193;</button>
+</div>
+<span class="badge">Bringt auf Ziel: 3</span>
+</div>
+</div>
+<div class="stepBody open">
+<div class="tableWrap">
+<table>
+<thead><tr>
+<th>Achse</th>
+<th class="mono">Sprung-Start</th>
+<th class="mono">Sprung-Ziel</th>
+<th>Status</th>
+</tr></thead>
+<tbody>
+<tr class="row bring">
+<td>Chandelier <span class="muted">(Chande)</span></td>
+<td class="mono">11600</td>
+<td class="mono">7804</td>
+<td><span class="status">Achse muss von 11600 nach 7804 fahren.</span></td>
+</tr>
+<tr class="row bring">
+<td>Track 3 <span class="muted">(Track3)</span></td>
+<td class="mono">9800</td>
+<td class="mono">10445</td>
+<td><span class="status">Achse muss von 9800 nach 10445 fahren.</span></td>
+</tr>
+<tr class="row bring">
+<td>Track 4 <span class="muted">(Track4)</span></td>
+<td class="mono">-10570</td>
+<td class="mono">-10445</td>
+<td><span class="status">Achse muss von -10570 nach -10445 fahren.</span></td>
+</tr>
+<tr class="row ok">
+<td>Track 7 <span class="muted">(Track7)</span></td>
+<td class="mono">10445</td>
+<td class="mono">10445</td>
+<td><span class="status">Achse bleibt in diesem Cue auf 10445.</span></td>
+</tr>
+<tr class="row ok">
+<td>Track 8 <span class="muted">(Track8)</span></td>
+<td class="mono">-10445</td>
+<td class="mono">-10445</td>
+<td><span class="status">Achse bleibt in diesem Cue auf -10445.</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="step" data-step-id="c:f:p34:cue34">
+<div class="stepHead">
+<div class="stepLeft">
+<div class="dragHandle" title="Verschieben">≡</div>
+<div class="stepIndex">4</div>
+<div class="stepTitle">
+<span class="dirBadge dirForward">Vorw&#228;rts 34</span>
+<span class="cueText">CQ 27 - Coro 1+2 IN</span>
+</div>
+</div>
+<div class="badges">
+<div class="reorderBtns">
+<button class="miniBtn" type="button" data-move="up" title="Nach oben">&#x2191;</button>
+<button class="miniBtn" type="button" data-move="down" title="Nach unten">&#x2193;</button>
+</div>
+<span class="badge">Bringt auf Ziel: 2</span>
 </div>
 </div>
 <div class="stepBody open">
@@ -901,41 +1271,29 @@ window.addEventListener('DOMContentLoaded', () => {
 <tbody>
 <tr class="row bring">
 <td>Coronation Hanger 1 <span class="muted">(Coro H 1)</span></td>
-<td class="mono">3350</td>
 <td class="mono">12000</td>
-<td><span class="status">Achse muss von 3350 nach 12000 fahren.</span></td>
+<td class="mono">3350</td>
+<td><span class="status">Achse muss von 12000 nach 3350 fahren.</span></td>
 </tr>
 <tr class="row bring">
 <td>Coronation Hanger 2 <span class="muted">(Coro H 2)</span></td>
-<td class="mono">3350</td>
 <td class="mono">11900</td>
-<td><span class="status">Achse muss von 3350 nach 11900 fahren.</span></td>
-</tr>
-<tr class="row bring">
-<td>Lichtleiter 6 SL <span class="muted">(LL6SL)</span></td>
-<td class="mono">5125</td>
-<td class="mono">3375</td>
-<td><span class="status">Achse muss von 5125 nach 3375 fahren.</span></td>
-</tr>
-<tr class="row bring">
-<td>Lichtleiter 6 SR <span class="muted">(LL6SR)</span></td>
-<td class="mono">5125</td>
-<td class="mono">3375</td>
-<td><span class="status">Achse muss von 5125 nach 3375 fahren.</span></td>
+<td class="mono">3350</td>
+<td><span class="status">Achse muss von 11900 nach 3350 fahren.</span></td>
 </tr>
 </tbody>
 </table>
 </div>
 </div>
 </div>
-<div class="step">
+<div class="step" data-step-id="c:f:p104:cue104">
 <div class="stepHead">
 <div class="stepLeft">
 <div class="dragHandle" title="Verschieben">≡</div>
-<div class="stepIndex">2</div>
+<div class="stepIndex">5</div>
 <div class="stepTitle">
-<span class="dirBadge dirForward">Vorw&#228;rts 58</span>
-<span class="cueText">Preset 9 - Chandelier Doppelshow Pre</span>
+<span class="dirBadge dirForward">Vorw&#228;rts 104</span>
+<span class="cueText">AQ 28 - Track 1 ON (FL)</span>
 </div>
 </div>
 <div class="badges">
@@ -957,10 +1315,49 @@ window.addEventListener('DOMContentLoaded', () => {
 </tr></thead>
 <tbody>
 <tr class="row bring">
-<td>Chandelier <span class="muted">(Chande)</span></td>
-<td class="mono">7804</td>
-<td class="mono">11600</td>
-<td><span class="status">Achse muss von 7804 nach 11600 fahren.</span></td>
+<td>Track 1 <span class="muted">(Track1)</span></td>
+<td class="mono">11700</td>
+<td class="mono">9988</td>
+<td><span class="status">Achse muss von 11700 nach 9988 fahren.</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="step" data-step-id="c:f:p91:cue91">
+<div class="stepHead">
+<div class="stepLeft">
+<div class="dragHandle" title="Verschieben">≡</div>
+<div class="stepIndex">6</div>
+<div class="stepTitle">
+<span class="dirBadge dirForward">Vorw&#228;rts 91</span>
+<span class="cueText">AQ 17 - Gates IN (SM)</span>
+</div>
+</div>
+<div class="badges">
+<div class="reorderBtns">
+<button class="miniBtn" type="button" data-move="up" title="Nach oben">&#x2191;</button>
+<button class="miniBtn" type="button" data-move="down" title="Nach unten">&#x2193;</button>
+</div>
+<span class="badge">Bringt auf Ziel: 1</span>
+</div>
+</div>
+<div class="stepBody open">
+<div class="tableWrap">
+<table>
+<thead><tr>
+<th>Achse</th>
+<th class="mono">Sprung-Start</th>
+<th class="mono">Sprung-Ziel</th>
+<th>Status</th>
+</tr></thead>
+<tbody>
+<tr class="row bring">
+<td>Gates/USWall <span class="muted">(USWall)</span></td>
+<td class="mono">8700</td>
+<td class="mono">0</td>
+<td><span class="status">Achse muss von 8700 nach 0 fahren.</span></td>
 </tr>
 </tbody>
 </table>
