@@ -27,6 +27,10 @@ body{
   font-size:14px;
 }
 
+body.modalOpen{
+  overflow:hidden;
+}
+
 .toolbar{
   position:sticky;
   top:0;
@@ -262,6 +266,7 @@ th{color:var(--muted); font-weight:700; text-align:left; font-size:12px}
   display:none;
   background:rgba(0,0,0,.55);
   padding:16px;
+  overscroll-behavior:contain;
 }
 .overlay.open{display:block}
 .modal{
