@@ -1,0 +1,686 @@
+{
+  "version": 1,
+  "updatedAt": 1768831209,
+  "axes": [
+    {
+      "axisId": 25,
+      "shortName": "ShScr",
+      "longName": "Showscrim",
+      "sortOrder": 10,
+      "enabled": true,
+      "colorHex": null
+    },
+    {
+      "axisId": 13,
+      "shortName": "FroBla",
+      "longName": "FrontBlack",
+      "sortOrder": 20,
+      "enabled": true,
+      "colorHex": null
+    },
+    {
+      "axisId": 27,
+      "shortName": "Cry DS",
+      "longName": "CrystalcurtainDS",
+      "sortOrder": 30,
+      "enabled": true,
+      "colorHex": "#FF7AD0FA"
+    },
+    {
+      "axisId": 14,
+      "shortName": "SPostC",
+      "longName": "SommerPostcard",
+      "sortOrder": 40,
+      "enabled": true,
+      "colorHex": null
+    },
+    {
+      "axisId": 29,
+      "shortName": "IcePa1",
+      "longName": "IcePalaceHanger1",
+      "sortOrder": 50,
+      "enabled": true,
+      "colorHex": "#FF7AD0FA"
+    },
+    {
+      "axisId": 5,
+      "shortName": "IWall1",
+      "longName": "Ice Wall 1",
+      "sortOrder": 60,
+      "enabled": true,
+      "colorHex": "#FF6672FF"
+    },
+    {
+      "axisId": 52,
+      "shortName": "Coro H 1",
+      "longName": "Coronation Hanger 1",
+      "sortOrder": 70,
+      "enabled": true,
+      "colorHex": "#FFAEAE00"
+    },
+    {
+      "axisId": 3,
+      "shortName": "ADoor",
+      "longName": "ArendelleDoor",
+      "sortOrder": 80,
+      "enabled": true,
+      "colorHex": null
+    },
+    {
+      "axisId": 21,
+      "shortName": "Oculus",
+      "longName": "Oculus",
+      "sortOrder": 90,
+      "enabled": true,
+      "colorHex": null
+    },
+    {
+      "axisId": 11,
+      "shortName": "IWall2",
+      "longName": "Ice Wall 2",
+      "sortOrder": 100,
+      "enabled": true,
+      "colorHex": "#FF6672FF"
+    },
+    {
+      "axisId": 30,
+      "shortName": "WisGa1",
+      "longName": "Wisteria Garden 1",
+      "sortOrder": 110,
+      "enabled": true,
+      "colorHex": "#FFFF9DA7"
+    },
+    {
+      "axisId": 18,
+      "shortName": "MSWall",
+      "longName": "Library/MSWall",
+      "sortOrder": 120,
+      "enabled": true,
+      "colorHex": null
+    },
+    {
+      "axisId": 7,
+      "shortName": "Cry MS",
+      "longName": "CrystalCurtain MS",
+      "sortOrder": 130,
+      "enabled": true,
+      "colorHex": "#FF7AD0FA"
+    },
+    {
+      "axisId": 37,
+      "shortName": "LX 3",
+      "longName": "LX 3",
+      "sortOrder": 140,
+      "enabled": true,
+      "colorHex": "#FFEF56C9"
+    },
+    {
+      "axisId": 24,
+      "shortName": "IcePa2",
+      "longName": "IcePalaceHanger2",
+      "sortOrder": 150,
+      "enabled": true,
+      "colorHex": "#FF7AD0FA"
+    },
+    {
+      "axisId": 23,
+      "shortName": "IWall3",
+      "longName": "Ice Wall 3",
+      "sortOrder": 160,
+      "enabled": true,
+      "colorHex": "#FF6672FF"
+    },
+    {
+      "axisId": 53,
+      "shortName": "Coro H 2",
+      "longName": "Coronation Hanger 2",
+      "sortOrder": 170,
+      "enabled": true,
+      "colorHex": "#FFAEAE00"
+    },
+    {
+      "axisId": 54,
+      "shortName": "Chande",
+      "longName": "Chandelier",
+      "sortOrder": 180,
+      "enabled": true,
+      "colorHex": "#FFAEAE00"
+    },
+    {
+      "axisId": 16,
+      "shortName": "USWall",
+      "longName": "Gates/USWall",
+      "sortOrder": 190,
+      "enabled": true,
+      "colorHex": null
+    },
+    {
+      "axisId": 6,
+      "shortName": "IWall4",
+      "longName": "IceWalls4",
+      "sortOrder": 200,
+      "enabled": true,
+      "colorHex": "#FF6672FF"
+    },
+    {
+      "axisId": 22,
+      "shortName": "WisGa2",
+      "longName": "Wisteria Garden 2",
+      "sortOrder": 210,
+      "enabled": true,
+      "colorHex": "#FFFF9DA7"
+    },
+    {
+      "axisId": 34,
+      "shortName": "LX 5",
+      "longName": "LX 5",
+      "sortOrder": 220,
+      "enabled": true,
+      "colorHex": "#FFEF56C9"
+    },
+    {
+      "axisId": 35,
+      "shortName": "Video",
+      "longName": "Video",
+      "sortOrder": 230,
+      "enabled": true,
+      "colorHex": null
+    },
+    {
+      "axisId": 33,
+      "shortName": "APorDS",
+      "longName": "[Apo1]  Arendelle Portal",
+      "sortOrder": 240,
+      "enabled": true,
+      "colorHex": "#FFA346FF"
+    },
+    {
+      "axisId": 9,
+      "shortName": "APorUS",
+      "longName": "[Apo1]  Arendelle Portal",
+      "sortOrder": 250,
+      "enabled": true,
+      "colorHex": "#FFA346FF"
+    },
+    {
+      "axisId": 63,
+      "shortName": "AP1 Tr",
+      "longName": "Arendel Portal 1 Travelle",
+      "sortOrder": 260,
+      "enabled": true,
+      "colorHex": "#FFA346FF"
+    },
+    {
+      "axisId": 36,
+      "shortName": "AWinDS",
+      "longName": "[AWall]  Arendelle Wall /",
+      "sortOrder": 270,
+      "enabled": true,
+      "colorHex": "#FFFFFF00"
+    },
+    {
+      "axisId": 17,
+      "shortName": "AWinUS",
+      "longName": "[AWall]  Arendelle Wall /",
+      "sortOrder": 280,
+      "enabled": true,
+      "colorHex": "#FFFFFF00"
+    },
+    {
+      "axisId": 92,
+      "shortName": "WinSL",
+      "longName": "Window SL",
+      "sortOrder": 290,
+      "enabled": true,
+      "colorHex": "#FFFFFF00"
+    },
+    {
+      "axisId": 91,
+      "shortName": "WinSR",
+      "longName": "Window SR",
+      "sortOrder": 300,
+      "enabled": true,
+      "colorHex": "#FFFFFF00"
+    },
+    {
+      "axisId": 93,
+      "shortName": "ShutSL",
+      "longName": "Shutter 1 SL",
+      "sortOrder": 310,
+      "enabled": true,
+      "colorHex": "#FFFFFF00"
+    },
+    {
+      "axisId": 94,
+      "shortName": "ShutC",
+      "longName": "Shutter 2 Center",
+      "sortOrder": 320,
+      "enabled": true,
+      "colorHex": "#FFFFFF00"
+    },
+    {
+      "axisId": 95,
+      "shortName": "ShutSR",
+      "longName": "Shutter 3 SR",
+      "sortOrder": 330,
+      "enabled": true,
+      "colorHex": "#FFFFFF00"
+    },
+    {
+      "axisId": 10,
+      "shortName": "APor 2",
+      "longName": "[APort2]  Arendelle Portal",
+      "sortOrder": 340,
+      "enabled": true,
+      "colorHex": "#FFA346FF"
+    },
+    {
+      "axisId": 15,
+      "shortName": "APor 3",
+      "longName": "[APort2]  Arendelle Portal",
+      "sortOrder": 350,
+      "enabled": true,
+      "colorHex": "#FFA346FF"
+    },
+    {
+      "axisId": 64,
+      "shortName": "AP2 Tr",
+      "longName": "Arendel Portal 2 Travelle",
+      "sortOrder": 360,
+      "enabled": true,
+      "colorHex": "#FFA346FF"
+    },
+    {
+      "axisId": 38,
+      "shortName": "LL1SL",
+      "longName": "Lichtleiter 1 SL",
+      "sortOrder": 370,
+      "enabled": true,
+      "colorHex": "#FF00FF00"
+    },
+    {
+      "axisId": 40,
+      "shortName": "LL2SL",
+      "longName": "Lichtleiter 2 SL",
+      "sortOrder": 380,
+      "enabled": true,
+      "colorHex": "#FF00FF00"
+    },
+    {
+      "axisId": 42,
+      "shortName": "LL3SL",
+      "longName": "Lichtleiter 3 SL",
+      "sortOrder": 390,
+      "enabled": true,
+      "colorHex": "#FF00FF00"
+    },
+    {
+      "axisId": 44,
+      "shortName": "LL4SL",
+      "longName": "Lichtleiter 4 SL",
+      "sortOrder": 400,
+      "enabled": true,
+      "colorHex": "#FF00FF00"
+    },
+    {
+      "axisId": 46,
+      "shortName": "LL5SL",
+      "longName": "Lichtleiter 5 SL",
+      "sortOrder": 410,
+      "enabled": true,
+      "colorHex": "#FF00FF00"
+    },
+    {
+      "axisId": 48,
+      "shortName": "LL6SL",
+      "longName": "Lichtleiter 6 SL",
+      "sortOrder": 420,
+      "enabled": true,
+      "colorHex": "#FF00FF00"
+    },
+    {
+      "axisId": 39,
+      "shortName": "LL1SR",
+      "longName": "Lichtleiter 1 SR",
+      "sortOrder": 430,
+      "enabled": true,
+      "colorHex": "#FF00BF00"
+    },
+    {
+      "axisId": 41,
+      "shortName": "LL2SR",
+      "longName": "Lichtleiter 2 SR",
+      "sortOrder": 440,
+      "enabled": true,
+      "colorHex": "#FF00BF00"
+    },
+    {
+      "axisId": 43,
+      "shortName": "LL3SR",
+      "longName": "Lichtleiter 3 SR",
+      "sortOrder": 450,
+      "enabled": true,
+      "colorHex": "#FF00BF00"
+    },
+    {
+      "axisId": 45,
+      "shortName": "LL4SR",
+      "longName": "Lichtleiter 4 SR",
+      "sortOrder": 460,
+      "enabled": true,
+      "colorHex": "#FF00BF00"
+    },
+    {
+      "axisId": 47,
+      "shortName": "LL5SR",
+      "longName": "Lichtleiter 5 SR",
+      "sortOrder": 470,
+      "enabled": true,
+      "colorHex": "#FF00BF00"
+    },
+    {
+      "axisId": 49,
+      "shortName": "LL6SR",
+      "longName": "Lichtleiter 6 SR",
+      "sortOrder": 480,
+      "enabled": true,
+      "colorHex": "#FF00BF00"
+    },
+    {
+      "axisId": 55,
+      "shortName": "Track1",
+      "longName": "Track 1",
+      "sortOrder": 490,
+      "enabled": true,
+      "colorHex": null
+    },
+    {
+      "axisId": 57,
+      "shortName": "Track2",
+      "longName": "Track 2",
+      "sortOrder": 500,
+      "enabled": true,
+      "colorHex": null
+    },
+    {
+      "axisId": 56,
+      "shortName": "Track3",
+      "longName": "Track 3",
+      "sortOrder": 510,
+      "enabled": true,
+      "colorHex": null
+    },
+    {
+      "axisId": 58,
+      "shortName": "Track4",
+      "longName": "Track 4",
+      "sortOrder": 520,
+      "enabled": true,
+      "colorHex": null
+    },
+    {
+      "axisId": 59,
+      "shortName": "Track5",
+      "longName": "Track 5",
+      "sortOrder": 530,
+      "enabled": true,
+      "colorHex": null
+    },
+    {
+      "axisId": 61,
+      "shortName": "Track6",
+      "longName": "Track 6",
+      "sortOrder": 540,
+      "enabled": true,
+      "colorHex": null
+    },
+    {
+      "axisId": 60,
+      "shortName": "Track7",
+      "longName": "Track 7",
+      "sortOrder": 550,
+      "enabled": true,
+      "colorHex": null
+    },
+    {
+      "axisId": 62,
+      "shortName": "Track8",
+      "longName": "Track 8",
+      "sortOrder": 560,
+      "enabled": true,
+      "colorHex": null
+    },
+    {
+      "axisId": 81,
+      "shortName": "Track9",
+      "longName": "Track 9",
+      "sortOrder": 570,
+      "enabled": true,
+      "colorHex": null
+    },
+    {
+      "axisId": 82,
+      "shortName": "Track10",
+      "longName": "Track 10",
+      "sortOrder": 580,
+      "enabled": true,
+      "colorHex": null
+    },
+    {
+      "axisId": 83,
+      "shortName": "CenT",
+      "longName": "Center Track",
+      "sortOrder": 590,
+      "enabled": true,
+      "colorHex": null
+    },
+    {
+      "axisId": 88,
+      "shortName": "U \u002B S",
+      "longName": "Umbrella \u0026 Surfboard",
+      "sortOrder": 600,
+      "enabled": true,
+      "colorHex": "#FFFF7648"
+    },
+    {
+      "axisId": 65,
+      "shortName": "SumFl",
+      "longName": "Summer Flipper",
+      "sortOrder": 610,
+      "enabled": true,
+      "colorHex": "#FFFFA317"
+    },
+    {
+      "axisId": 66,
+      "shortName": "Itmes1",
+      "longName": "Items 1",
+      "sortOrder": 620,
+      "enabled": true,
+      "colorHex": "#FFFFA317"
+    },
+    {
+      "axisId": 96,
+      "shortName": "Items2",
+      "longName": "Items 2",
+      "sortOrder": 630,
+      "enabled": true,
+      "colorHex": "#FFFFA317"
+    },
+    {
+      "axisId": 69,
+      "shortName": "Shell1",
+      "longName": "Shell1",
+      "sortOrder": 640,
+      "enabled": true,
+      "colorHex": "#FF24FF97"
+    },
+    {
+      "axisId": 70,
+      "shortName": "Shell2",
+      "longName": "Shell2",
+      "sortOrder": 650,
+      "enabled": true,
+      "colorHex": "#FF24FF97"
+    },
+    {
+      "axisId": 71,
+      "shortName": "Shell3",
+      "longName": "Shell3",
+      "sortOrder": 660,
+      "enabled": true,
+      "colorHex": "#FF24FF97"
+    },
+    {
+      "axisId": 72,
+      "shortName": "Shell4",
+      "longName": "Shell4",
+      "sortOrder": 670,
+      "enabled": true,
+      "colorHex": "#FF24FF97"
+    },
+    {
+      "axisId": 73,
+      "shortName": "Shell5",
+      "longName": "Shell5",
+      "sortOrder": 680,
+      "enabled": true,
+      "colorHex": "#FF24FF97"
+    },
+    {
+      "axisId": 74,
+      "shortName": "Shell6",
+      "longName": "Shell6",
+      "sortOrder": 690,
+      "enabled": true,
+      "colorHex": "#FF24FF97"
+    },
+    {
+      "axisId": 75,
+      "shortName": "Shell7",
+      "longName": "Shell7",
+      "sortOrder": 700,
+      "enabled": true,
+      "colorHex": "#FF24FF97"
+    },
+    {
+      "axisId": 85,
+      "shortName": "ILT1SL",
+      "longName": "Ice Legs Traveller 1 SL",
+      "sortOrder": 710,
+      "enabled": true,
+      "colorHex": "#FF41A3F3"
+    },
+    {
+      "axisId": 87,
+      "shortName": "ILT2SL",
+      "longName": "Ice Legs Traveller 2 SL",
+      "sortOrder": 720,
+      "enabled": true,
+      "colorHex": "#FF41A3F3"
+    },
+    {
+      "axisId": 84,
+      "shortName": "ILT1SR",
+      "longName": "Ice Legs Traveller 1 SR",
+      "sortOrder": 730,
+      "enabled": true,
+      "colorHex": "#FF41A3F3"
+    },
+    {
+      "axisId": 86,
+      "shortName": "ILT2SR",
+      "longName": "Ice Legs Traveller 2 SR",
+      "sortOrder": 740,
+      "enabled": true,
+      "colorHex": "#FF41A3F3"
+    },
+    {
+      "axisId": 89,
+      "shortName": "IWFSL",
+      "longName": "Ice Waterfall SL",
+      "sortOrder": 750,
+      "enabled": true,
+      "colorHex": "#FF6672FF"
+    },
+    {
+      "axisId": 90,
+      "shortName": "IWFSR",
+      "longName": "Ice Waterfall SR",
+      "sortOrder": 760,
+      "enabled": true,
+      "colorHex": "#FF6672FF"
+    },
+    {
+      "axisId": 76,
+      "shortName": "IceStr",
+      "longName": "Ice Strike",
+      "sortOrder": 770,
+      "enabled": true,
+      "colorHex": "#FF800000"
+    },
+    {
+      "axisId": 77,
+      "shortName": "IceDir",
+      "longName": "Ice Strike Richtung",
+      "sortOrder": 780,
+      "enabled": true,
+      "colorHex": "#FF800000"
+    },
+    {
+      "axisId": 68,
+      "shortName": "Cape",
+      "longName": "Cape",
+      "sortOrder": 790,
+      "enabled": true,
+      "colorHex": null
+    },
+    {
+      "axisId": 67,
+      "shortName": "Glove",
+      "longName": "Glove",
+      "sortOrder": 800,
+      "enabled": true,
+      "colorHex": null
+    },
+    {
+      "axisId": 28,
+      "shortName": "LX 1",
+      "longName": "LX 1",
+      "sortOrder": 810,
+      "enabled": true,
+      "colorHex": "#FFDDAAAA"
+    },
+    {
+      "axisId": 8,
+      "shortName": "LX 2",
+      "longName": "LX 2",
+      "sortOrder": 820,
+      "enabled": true,
+      "colorHex": "#FFDDAAAA"
+    },
+    {
+      "axisId": 12,
+      "shortName": "LX 4",
+      "longName": "LX 4",
+      "sortOrder": 830,
+      "enabled": true,
+      "colorHex": "#FFDDAAAA"
+    },
+    {
+      "axisId": 31,
+      "shortName": "LX 4",
+      "longName": "LX 4",
+      "sortOrder": 840,
+      "enabled": true,
+      "colorHex": "#FFDDAAAA"
+    },
+    {
+      "axisId": 0,
+      "shortName": "Achse 0",
+      "longName": "Achse 0",
+      "sortOrder": 850,
+      "enabled": false,
+      "colorHex": null
+    }
+  ]
+}
