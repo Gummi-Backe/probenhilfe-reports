@@ -222,6 +222,21 @@ body.compact .reorderBtns{display:flex}
 .tableWrap{overflow-x:auto; padding:0 10px 10px}
 table{width:100%; border-collapse:separate; border-spacing:0; min-width:520px; font-size:13px}
 th,td{padding:8px 10px; border-bottom:1px solid rgba(255,255,255,.06); vertical-align:top}
+tbody td:first-child{position:relative; padding-left:14px}
+tbody td:first-child::before{
+  content:"";
+  position:absolute;
+  left:0;
+  top:0;
+  bottom:0;
+  width:5px;
+  border-radius:6px;
+  background:transparent;
+}
+.row.bring td:first-child::before{background:var(--bringBorder)}
+.row.ok td:first-child::before{background:var(--okBorder)}
+.row.warn td:first-child::before{background:var(--warnBorder)}
+.row.neutral td:first-child::before{background:var(--neutralBorder)}
 th{color:var(--muted); font-weight:700; text-align:left; font-size:12px}
 .mono{font-variant-numeric:tabular-nums; font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace}
 .row.ok{background:rgba(19,58,42,.20)}
