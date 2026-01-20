@@ -93,8 +93,20 @@ body.modalOpen{
   gap:12px;
   margin-top:10px;
 }
+.brand{display:flex; align-items:flex-start; gap:12px; min-width:0}
+.brandText{min-width:0}
+.appLogo{
+  width:64px;
+  height:64px;
+  border-radius:14px;
+  flex:0 0 auto;
+  object-fit:cover;
+  box-shadow:0 12px 40px rgba(0,0,0,.35);
+  border:1px solid rgba(255,255,255,.10);
+}
 .title{font-size:20px; font-weight:800}
 .subtitle{color:var(--text); margin-top:6px; font-size:16px; font-weight:800}
+.topSummary{color:var(--muted); margin-top:6px; font-size:12px; font-weight:650}
 .meta{color:var(--muted); font-size:12px; text-align:right}
 .meta#reportMeta{display:none}
 .muted{color:var(--muted)}
