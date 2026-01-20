@@ -166,6 +166,7 @@ body.modalOpen{
   background:rgba(255,255,255,.03);
   cursor:grab;
   flex:0 0 auto;
+  touch-action:none;
 }
 .stepIndex{
   width:26px;
