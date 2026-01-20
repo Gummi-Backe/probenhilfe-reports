@@ -152,6 +152,7 @@ body.modalOpen{
   padding:10px 10px;
   cursor:pointer;
   user-select:none;
+  touch-action:pan-y;
   background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
   border-bottom:1px solid rgba(255,255,255,.07);
   -webkit-user-select:none;
