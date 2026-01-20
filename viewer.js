@@ -902,28 +902,37 @@
     const titleEl = document.getElementById('reportTitle');
     const subtitleEl = document.getElementById('reportSubtitle');
     const metaEl = document.getElementById('reportMeta');
+    const topSummaryEl = document.getElementById('reportTopSummary');
     const host = document.getElementById('sectionsHost');
 
     if (titleEl) titleEl.textContent = report?.title || 'Probenhilfe - Cue-Sequenz';
     if (subtitleEl) subtitleEl.textContent = report?.subtitle || '';
     if (metaEl) metaEl.textContent = '';
+    if (topSummaryEl) {
+      const firstSummary = Array.isArray(report?.sections) ? String(report.sections?.[0]?.summary || '').trim() : '';
+      topSummaryEl.textContent = firstSummary;
+    }
     if (!host) return;
 
     host.innerHTML = '';
 
     const sections = Array.isArray(report?.sections) ? report.sections : [];
-    sections.forEach(section => {
+    sections.forEach((section, sectionIndex) => {
       const sid = section?.sid || '';
       const sec = document.createElement('section');
       sec.className = 'section';
       sec.dataset.sid = sid;
-      sec.innerHTML = `
-        <div class="sectionHead">
-          <div class="sectionTitle">${escapeHtml(section?.title || '')}</div>
-          <div class="sectionSummary">${escapeHtml(section?.summary || '')}</div>
-        </div>
-        <div class="steps"></div>
-      `;
+      if (sectionIndex === 0) {
+        sec.innerHTML = `<div class="steps"></div>`;
+      } else {
+        sec.innerHTML = `
+          <div class="sectionHead">
+            <div class="sectionTitle">${escapeHtml(section?.title || '')}</div>
+            <div class="sectionSummary">${escapeHtml(section?.summary || '')}</div>
+          </div>
+          <div class="steps"></div>
+        `;
+      }
 
       const stepsEl = sec.querySelector('.steps');
       const steps = Array.isArray(section?.steps) ? section.steps : [];
@@ -1118,11 +1127,14 @@
 
       <div class="wrap">
         <div class="header">
-          <div>
-            <div class="title" id="reportTitle"></div>
-            <div class="subtitle" id="reportSubtitle"></div>
+          <div class="brand">
+            <img class="appLogo" id="appLogo" alt="Probenhilfe"/>
+            <div class="brandText">
+              <div class="title" id="reportTitle"></div>
+              <div class="subtitle" id="reportSubtitle"></div>
+              <div class="topSummary" id="reportTopSummary"></div>
+            </div>
           </div>
-          <div class="meta" id="reportMeta"></div>
         </div>
         <div class="legend legendMain">
           <div class="chip"><span class="dot bring"></span>Bringt auf Ziel</div>
@@ -1134,6 +1146,14 @@
         <div id="sectionsHost"></div>
       </div>
     `;
+
+    const logo = document.getElementById('appLogo');
+    if (logo) {
+      const ver = String(window.PH_VIEWER_ASSET_VERSION || '').trim();
+      const v = ver ? `?v=${encodeURIComponent(ver)}` : '';
+      logo.src = `LogoProbenhilfe.png${v}`;
+      logo.addEventListener('error', () => { logo.style.display = 'none'; }, { once: true });
+    }
   }
 
   async function start() {
