@@ -129,9 +129,20 @@
   let phData = null;
   let phAxes = null;
   let lastRemoteRev = null;
+  let axesChangedFirst = false;
 
   function getPhData() { return phData; }
   function getPhAxes() { return phAxes; }
+
+  function updateAxesSortBtn() {
+    const btn = document.getElementById('axesSortBtn');
+    if (!btn) return;
+    btn.classList.toggle('isActive', axesChangedFirst);
+    btn.setAttribute('aria-pressed', axesChangedFirst ? 'true' : 'false');
+    const title = axesChangedFirst ? 'Normale Reihenfolge' : 'Gelbe Achsen zuerst';
+    btn.title = title;
+    btn.setAttribute('aria-label', title);
+  }
 
   function renderAxesOverlay() {
     const data = getPhAxes();
@@ -154,7 +165,13 @@
       };
     }).filter(Boolean);
 
-    merged.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+    merged.sort((a, b) => {
+      if (axesChangedFirst) {
+        const dc = (b.isChanged ? 1 : 0) - (a.isChanged ? 1 : 0);
+        if (dc) return dc;
+      }
+      return (a.sortOrder || 0) - (b.sortOrder || 0);
+    });
     merged.forEach(a => {
       const tile = document.createElement('div');
       tile.className = 'axisTile' + (a.isChanged ? ' changed' : '');
@@ -166,6 +183,8 @@
       `;
       grid.appendChild(tile);
     });
+
+    updateAxesSortBtn();
 
     const sub = document.getElementById('axesSub');
     if (sub) {
@@ -199,6 +218,7 @@
     const btn = document.getElementById('axesBtn');
     const overlay = document.getElementById('axesOverlay');
     const closeBtn = document.getElementById('axesCloseBtn');
+    const sortBtn = document.getElementById('axesSortBtn');
     if (!btn || !overlay) return;
     const syncBodyClass = () => {
       const anyOpen = !!document.querySelector('.overlay.open');
@@ -212,6 +232,14 @@
     };
     const close = () => { overlay.classList.remove('open'); syncBodyClass(); };
     btn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); open(); });
+    sortBtn?.addEventListener('click', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      axesChangedFirst = !axesChangedFirst;
+      await ensureAxisMetaLoaded(false);
+      renderAxesOverlay();
+      showToast(axesChangedFirst ? 'Gelbe Achsen zuerst' : 'Normale Reihenfolge');
+    });
     closeBtn?.addEventListener('click', (e) => { e.preventDefault(); close(); });
     overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
     window.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
@@ -928,7 +956,10 @@
         <div class="modal">
           <div class="modalHead">
             <div class="modalTitle">Achsen</div>
-            <button class="btn iconBtn" id="axesCloseBtn" type="button" title="Schließen" aria-label="Schließen">&#x2715;</button>
+            <div class="modalHeadRight">
+              <button class="btn iconBtn" id="axesSortBtn" type="button" title="Gelbe Achsen zuerst" aria-label="Gelbe Achsen zuerst" aria-pressed="false">&#x21C5;</button>
+              <button class="btn iconBtn" id="axesCloseBtn" type="button" title="Schließen" aria-label="Schließen">&#x2715;</button>
+            </div>
           </div>
           <div class="modalSub" id="axesSub"></div>
           <div class="modalBody">
