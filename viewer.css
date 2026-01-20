@@ -94,7 +94,7 @@ body.modalOpen{
   margin-top:10px;
 }
 .title{font-size:20px; font-weight:800}
-.subtitle{color:var(--muted); margin-top:3px}
+.subtitle{color:var(--text); margin-top:6px; font-size:16px; font-weight:800}
 .meta{color:var(--muted); font-size:12px; text-align:right}
 .meta#reportMeta{display:none}
 .muted{color:var(--muted)}
@@ -124,6 +124,7 @@ body.modalOpen{
 .dot.neutral{background:var(--neutralBorder)}
 
 .section{margin:16px 0 22px}
+.sectionTitle{display:none}
 .sectionHead{
   display:flex;
   align-items:flex-end;
@@ -131,7 +132,6 @@ body.modalOpen{
   gap:10px;
   margin-bottom:10px;
 }
-.sectionTitle{font-weight:800}
 .sectionSummary{color:var(--muted); font-size:12px}
 
 .steps{display:flex; flex-direction:column; gap:10px}
