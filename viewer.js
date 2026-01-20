@@ -324,9 +324,10 @@
         if (dx < 0) return;
 
         // trigger threshold: mostly horizontal, big enough
-        if (!consumed && dx > 42 && Math.abs(dx) > Math.abs(dy) * 2) {
+        if (!consumed && dx > 36 && Math.abs(dx) > Math.abs(dy) * 1.8) {
           consumed = true;
           head.dataset.swipeJustDid = '1';
+          ev.preventDefault(); // stop scroll after gesture is recognized
           toggleStepDone(step);
           cleanup();
         }
@@ -338,12 +339,16 @@
       }
 
       function cleanup() {
-        window.removeEventListener('pointermove', move, { passive: true });
-        window.removeEventListener('pointerup', up, { passive: true });
-        window.removeEventListener('pointercancel', up, { passive: true });
+        try {
+          if (head.hasPointerCapture?.(pointerId)) head.releasePointerCapture(pointerId);
+        } catch { /* ignore */ }
+        window.removeEventListener('pointermove', move);
+        window.removeEventListener('pointerup', up);
+        window.removeEventListener('pointercancel', up);
       }
 
-      window.addEventListener('pointermove', move, { passive: true });
+      try { head.setPointerCapture?.(pointerId); } catch { /* ignore */ }
+      window.addEventListener('pointermove', move, { passive: false });
       window.addEventListener('pointerup', up, { passive: true });
       window.addEventListener('pointercancel', up, { passive: true });
     }, { passive: true });
