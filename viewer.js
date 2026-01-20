@@ -47,6 +47,13 @@
       .replaceAll("'", '&#39;');
   }
 
+  function eventTargetElement(e) {
+    const t = e?.target;
+    if (t instanceof Element) return t;
+    if (t && t.nodeType === 3) return t.parentElement; // Text node
+    return null;
+  }
+
   function splitHeader(header) {
     const h = String(header || '');
     const i = h.indexOf(':');
@@ -224,17 +231,19 @@
     }
 
     document.addEventListener('click', (e) => {
-      const head = e.target.closest('.stepHead');
+      const t = eventTargetElement(e);
+      const head = t?.closest?.('.stepHead');
       if (!head) return;
-      if (e.target.closest('.dragHandle') || e.target.closest('.miniBtn')) return;
+      if (t.closest('.dragHandle') || t.closest('.miniBtn')) return;
       toggleForHead(head);
     });
 
     document.addEventListener('keydown', (e) => {
       if (e.key !== 'Enter' && e.key !== ' ') return;
-      const head = e.target?.closest?.('.stepHead');
+      const t = eventTargetElement(e);
+      const head = t?.closest?.('.stepHead');
       if (!head) return;
-      if (e.target.closest('.dragHandle') || e.target.closest('.miniBtn')) return;
+      if (t.closest('.dragHandle') || t.closest('.miniBtn')) return;
       e.preventDefault();
       toggleForHead(head);
     });
@@ -298,7 +307,8 @@
 
   function enableReorderButtons() {
     document.addEventListener('click', (e) => {
-      const btn = e.target.closest('.miniBtn[data-move]');
+      const t = eventTargetElement(e);
+      const btn = t?.closest?.('.miniBtn[data-move]');
       if (!btn) return;
       e.preventDefault();
       e.stopPropagation();
@@ -414,7 +424,8 @@
     }
 
     stepsEl.addEventListener('pointerdown', (e) => {
-      const handle = e.target.closest('.dragHandle');
+      const t = eventTargetElement(e);
+      const handle = t?.closest?.('.dragHandle');
       if (!handle) return;
       const step = handle.closest('.step');
       if (!step) return;
