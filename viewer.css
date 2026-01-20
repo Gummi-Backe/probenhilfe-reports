@@ -162,10 +162,14 @@ body.modalOpen{
   -webkit-user-select:none;
   -webkit-touch-callout:none;
 }
-.step.done{filter:saturate(.65) brightness(.92)}
-.step.done .stepHead{opacity:.55}
-.step.done .stepBody{opacity:.18}
-.stepLeft{display:flex; align-items:center; gap:10px; min-width:0}
+.step.done{filter:grayscale(1) brightness(.90) contrast(.95)}
+.step.done .stepHead{
+  opacity:.38;
+  background:rgba(255,255,255,.02);
+  border-bottom-color:rgba(255,255,255,.04);
+}
+.step.done .stepBody{opacity:.12}
+.stepLeft{display:flex; align-items:center; gap:8px; min-width:0}
 .dragHandle{
   width:34px;
   height:34px;
@@ -177,7 +181,7 @@ body.modalOpen{
   background:rgba(255,255,255,.03);
   cursor:grab;
   flex:0 0 auto;
-  margin-right:-6px;
+  margin-right:-12px;
   touch-action:none;
 }
 .stepIndex{
