@@ -96,8 +96,8 @@ body.modalOpen{
 .brand{display:flex; align-items:flex-start; gap:12px; min-width:0}
 .brandText{min-width:0}
 .appLogo{
-  width:64px;
-  height:64px;
+  width:86px;
+  height:86px;
   border-radius:14px;
   flex:0 0 auto;
   object-fit:cover;
@@ -370,4 +370,5 @@ th{color:var(--muted); font-weight:700; text-align:left; font-size:12px}
   .step{min-width: 260px}
   table{min-width: 460px}
   .cueText{max-width: 280px}
+  .appLogo{width:64px; height:64px}
 }
