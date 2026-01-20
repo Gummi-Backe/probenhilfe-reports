@@ -296,7 +296,7 @@
       const step = badge.closest('.step');
       if (!step) return;
       e.preventDefault();
-      e.stopPropagation();
+      e.stopImmediatePropagation(); // important: document has other click listeners (collapse)
       toggleStepDone(step);
     });
 
@@ -965,7 +965,6 @@
               <span class="badge notice" data-badge="unblock" style="display:${unblockBadgeText ? 'inline-flex' : 'none'}">${escapeHtml(unblockBadgeText)}</span>
               <span class="badge warn" data-badge="block" style="display:${blockBadgeText ? 'inline-flex' : 'none'}">${escapeHtml(blockBadgeText)}</span>
               <span class="badge" data-badge="affected" style="display:${affectedBadgeText ? 'inline-flex' : 'none'}">${escapeHtml(affectedBadgeText)}</span>
-              <div class="caret" aria-hidden="true">&#x25BE;</div>
             </div>
           </div>
           <div class="stepBody open"></div>
