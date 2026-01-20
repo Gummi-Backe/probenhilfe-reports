@@ -154,7 +154,16 @@ body.modalOpen{
   user-select:none;
   background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
   border-bottom:1px solid rgba(255,255,255,.07);
+  -webkit-user-select:none;
+  -webkit-touch-callout:none;
 }
+.stepHead *{
+  user-select:none;
+  -webkit-user-select:none;
+  -webkit-touch-callout:none;
+}
+.step.done .stepHead{opacity:.78}
+.step.done .stepBody{opacity:.45}
 .stepLeft{display:flex; align-items:center; gap:10px; min-width:0}
 .dragHandle{
   width:28px;
