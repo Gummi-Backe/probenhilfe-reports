@@ -906,7 +906,7 @@
 
     if (titleEl) titleEl.textContent = report?.title || 'Probenhilfe - Cue-Sequenz';
     if (subtitleEl) subtitleEl.textContent = report?.subtitle || '';
-    if (metaEl) metaEl.innerHTML = `Export: ${escapeHtml(report?.generatedAt || '')}<br/><span class="muted">Quelle: Probenhilfe</span>`;
+    if (metaEl) metaEl.textContent = '';
     if (!host) return;
 
     host.innerHTML = '';
@@ -1088,6 +1088,14 @@
           </div>
           <div class="modalBody">
             <p>Diese Seite zeigt die zuletzt in Probenhilfe veröffentlichte Cue-Sequenz. Du kannst die Reihenfolge ändern – die Details werden dabei sofort neu berechnet.</p>
+            <h3>Farben</h3>
+            <div class="legend legendHelp">
+              <div class="chip"><span class="dot bring"></span>Bringt auf Ziel</div>
+              <div class="chip"><span class="dot ok"></span>Keine Bewegung</div>
+              <div class="chip"><span class="dot warn"></span>W&uuml;rde weg vom Ziel bewegen / Sperren</div>
+              <div class="chip"><span class="dot neutral"></span>Sonstiges</div>
+              <div class="chip"><span class="dot" style="background:var(--notice)"></span>Vor diesem Cue entsperren</div>
+            </div>
             <h3>Ein-/Ausklappen</h3>
             <ul>
               <li>Tippe auf einen Cue-Kopf, um genau diesen Cue ein- oder auszuklappen.</li>
@@ -1116,7 +1124,7 @@
           </div>
           <div class="meta" id="reportMeta"></div>
         </div>
-        <div class="legend">
+        <div class="legend legendMain">
           <div class="chip"><span class="dot bring"></span>Bringt auf Ziel</div>
           <div class="chip"><span class="dot ok"></span>Keine Bewegung</div>
           <div class="chip"><span class="dot warn"></span>Würde weg vom Ziel bewegen / Sperren</div>
