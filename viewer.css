@@ -96,6 +96,7 @@ body.modalOpen{
 .title{font-size:20px; font-weight:800}
 .subtitle{color:var(--muted); margin-top:3px}
 .meta{color:var(--muted); font-size:12px; text-align:right}
+.meta#reportMeta{display:none}
 .muted{color:var(--muted)}
 
 .legend{
@@ -104,6 +105,7 @@ body.modalOpen{
   gap:10px;
   margin:12px 0 18px;
 }
+.legendMain{display:none}
 .chip{
   display:inline-flex;
   align-items:center;
