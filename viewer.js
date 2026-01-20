@@ -130,9 +130,51 @@
   let phAxes = null;
   let lastRemoteRev = null;
   let axesChangedFirst = false;
+  let currentReportKey = null;
 
   function getPhData() { return phData; }
   function getPhAxes() { return phAxes; }
+
+  function doneStorageKey() {
+    const k = (currentReportKey || 'current').replace(/\s+/g, ' ').trim();
+    return `PH_DONE:${k}`;
+  }
+
+  function loadDoneMap() {
+    try {
+      const raw = localStorage.getItem(doneStorageKey());
+      const obj = raw ? JSON.parse(raw) : null;
+      return (obj && typeof obj === 'object') ? obj : {};
+    } catch {
+      return {};
+    }
+  }
+
+  function saveDoneMap(map) {
+    try { localStorage.setItem(doneStorageKey(), JSON.stringify(map || {})); } catch { /* ignore */ }
+  }
+
+  function isStepDone(stepId) {
+    if (!stepId) return false;
+    const map = loadDoneMap();
+    return map[String(stepId)] === true;
+  }
+
+  function setStepDone(stepId, done) {
+    if (!stepId) return;
+    const map = loadDoneMap();
+    if (done) map[String(stepId)] = true;
+    else delete map[String(stepId)];
+    saveDoneMap(map);
+  }
+
+  function toggleStepDone(stepEl) {
+    const stepId = stepEl?.dataset?.stepId || '';
+    const done = !isStepDone(stepId);
+    setStepDone(stepId, done);
+    stepEl?.classList?.toggle('done', done);
+    showToast(done ? 'Erledigt' : 'Wieder offen');
+  }
 
   function updateAxesSortBtn() {
     const btn = document.getElementById('axesSortBtn');
@@ -245,6 +287,68 @@
     window.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
   }
 
+  function enableLocalDoneToggle() {
+    // Toggle via "Fährt" badge (kein extra Icon im Kopf)
+    document.addEventListener('click', (e) => {
+      const t = eventTargetElement(e);
+      const badge = t?.closest?.(".badge[data-badge='affected']");
+      if (!badge) return;
+      const step = badge.closest('.step');
+      if (!step) return;
+      e.preventDefault();
+      e.stopPropagation();
+      toggleStepDone(step);
+    });
+
+    // Swipe links→rechts auf dem Cue-Kopf toggelt "erledigt" (nur lokal)
+    document.addEventListener('pointerdown', (e) => {
+      const t = eventTargetElement(e);
+      const head = t?.closest?.('.stepHead');
+      if (!head) return;
+      if (t.closest('.dragHandle') || t.closest('.miniBtn') || t.closest('.badge')) return;
+
+      const step = head.closest('.step');
+      if (!step) return;
+
+      const pointerId = e.pointerId;
+      const startX = e.clientX;
+      const startY = e.clientY;
+      let consumed = false;
+
+      function move(ev) {
+        if (ev.pointerId !== pointerId) return;
+        const dx = ev.clientX - startX;
+        const dy = ev.clientY - startY;
+
+        // only consider swipe left→right
+        if (dx < 0) return;
+
+        // trigger threshold: mostly horizontal, big enough
+        if (!consumed && dx > 42 && Math.abs(dx) > Math.abs(dy) * 2) {
+          consumed = true;
+          head.dataset.swipeJustDid = '1';
+          toggleStepDone(step);
+          cleanup();
+        }
+      }
+
+      function up(ev) {
+        if (ev.pointerId !== pointerId) return;
+        cleanup();
+      }
+
+      function cleanup() {
+        window.removeEventListener('pointermove', move, { passive: true });
+        window.removeEventListener('pointerup', up, { passive: true });
+        window.removeEventListener('pointercancel', up, { passive: true });
+      }
+
+      window.addEventListener('pointermove', move, { passive: true });
+      window.addEventListener('pointerup', up, { passive: true });
+      window.addEventListener('pointercancel', up, { passive: true });
+    }, { passive: true });
+  }
+
   function enableCollapse() {
     function toggleForHead(head) {
       if (!head) return;
@@ -262,6 +366,7 @@
       const t = eventTargetElement(e);
       const head = t?.closest?.('.stepHead');
       if (!head) return;
+      if (head.dataset.swipeJustDid === '1') { delete head.dataset.swipeJustDid; return; }
       if (t.closest('.dragHandle') || t.closest('.miniBtn')) return;
       toggleForHead(head);
     });
@@ -787,6 +892,7 @@
 
   async function renderReport(report) {
     await ensureAxisMetaLoaded(false);
+    currentReportKey = String(report?.generatedAt || report?.subtitle || report?.title || 'current');
 
     const titleEl = document.getElementById('reportTitle');
     const subtitleEl = document.getElementById('reportSubtitle');
@@ -864,6 +970,8 @@
           </div>
           <div class="stepBody open"></div>
         `;
+
+        if (isStepDone(stepId)) el.classList.add('done');
 
         const body = el.querySelector('.stepBody');
         if (disabled) {
@@ -1018,6 +1126,7 @@
 
   async function start() {
     mountUi();
+    enableLocalDoneToggle();
     enableCollapse();
     enableReorderButtons();
     enableHelp();
