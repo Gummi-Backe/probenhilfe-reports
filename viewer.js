@@ -174,6 +174,21 @@
     setStepDone(stepId, done);
     stepEl?.classList?.toggle('done', done);
     showToast(done ? 'Erledigt' : 'Wieder offen');
+
+    if (document.getElementById('axesOverlay')?.classList?.contains('open')) {
+      renderAxesOverlay();
+    }
+  }
+
+  function getCoveredAxisIdsFromDoneSteps() {
+    const covered = new Set();
+    document.querySelectorAll('.step.done').forEach(step => {
+      step.querySelectorAll('tr.row.bring').forEach(tr => {
+        const aid = Number(tr.dataset.axisid);
+        if (Number.isFinite(aid)) covered.add(aid);
+      });
+    });
+    return covered;
   }
 
   function updateAxesSortBtn() {
@@ -192,14 +207,16 @@
     if (!data || !Array.isArray(data.axes) || !grid) return;
     grid.innerHTML = '';
 
+    const coveredDone = getCoveredAxisIdsFromDoneSteps();
     const merged = data.axes.map(a => {
       const axisId = a.axisId;
       const meta = axisId != null ? axisMetaById?.[String(axisId)] : null;
       if (meta && meta.enabled === false) return null;
+      const remainingChanged = !!a.isChanged && !coveredDone.has(axisId);
       return {
         axisId,
         target: a.target,
-        isChanged: !!a.isChanged,
+        isChanged: remainingChanged,
         longName: meta?.longName ?? `Achse ${axisId}`,
         shortName: meta?.shortName ?? String(axisId ?? ''),
         sortOrder: Number.isFinite(meta?.sortOrder) ? meta.sortOrder : (axisId ?? 0),
