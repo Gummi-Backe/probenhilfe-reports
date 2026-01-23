@@ -71,6 +71,35 @@
       const idx = el.querySelector('.stepIndex');
       if (idx) idx.textContent = String(i + 1);
     });
+
+    document.getElementById('syncUndoBtn')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (remoteUndoStack.length === 0) return;
+      const current = cloneOrders(getCurrentOrders());
+      const snapshot = remoteUndoStack.pop();
+      remoteRedoStack.push(current);
+      applyOrders(snapshot);
+      updateRemoteButtons();
+      showToast('Rückgängig');
+    });
+
+    document.getElementById('syncRedoBtn')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (remoteRedoStack.length === 0) return;
+      const current = cloneOrders(getCurrentOrders());
+      const snapshot = remoteRedoStack.pop();
+      remoteUndoStack.push(current);
+      applyOrders(snapshot);
+      updateRemoteButtons();
+      showToast('Vorwärts');
+    });
+
+    document.getElementById('syncUploadBtn')?.addEventListener('click', async (e) => {
+      e.preventDefault();
+      await uploadOrdersToFirebase();
+    });
+
+    updateRemoteButtons();
   }
 
   function setAllCollapsed(collapsed) {
@@ -594,7 +623,14 @@
   function enableFirebaseSync() {
     document.getElementById('syncRefreshBtn')?.addEventListener('click', async (e) => {
       e.preventDefault();
-      const changed = await pullOrdersFromFirebase();
+      const before = cloneOrders(getCurrentOrders());
+      const res = await pullOrdersFromFirebase();
+      const changed = !!res.changed;
+      if (changed) {
+        remoteUndoStack.push(before);
+        remoteRedoStack = [];
+        updateRemoteButtons();
+      }
       showToast(changed ? 'Sortierung aktualisiert' : 'Keine Änderung');
     });
   }
@@ -630,28 +666,60 @@
     return orders;
   }
 
-  let pushTimer = null;
-  function notifyOrderChanged() {
-    recomputeAllSections();
-    if (pushTimer) clearTimeout(pushTimer);
-    pushTimer = setTimeout(() => pushOrdersToFirebase(), 250);
+  let remoteUndoStack = [];
+  let remoteRedoStack = [];
+
+  function clearRemoteHistory() {
+    remoteUndoStack = [];
+    remoteRedoStack = [];
+    updateRemoteButtons();
   }
 
-  async function pushOrdersToFirebase() {
+  function cloneOrders(orders) {
+    try { return JSON.parse(JSON.stringify(orders || {})); } catch { return {}; }
+  }
+
+  function updateRemoteButtons() {
+    const undoBtn = document.getElementById('syncUndoBtn');
+    const redoBtn = document.getElementById('syncRedoBtn');
+    if (undoBtn) undoBtn.disabled = remoteUndoStack.length === 0;
+    if (redoBtn) redoBtn.disabled = remoteRedoStack.length === 0;
+  }
+
+  function notifyOrderChanged() {
+    recomputeAllSections();
+    // Manuelle Sortierung soll keine Undo/Redo-History erzeugen (Undo/Redo ist nur für "Sortierung aktualisieren").
+    clearRemoteHistory();
+  }
+
+  async function uploadOrdersToFirebase() {
     const orders = getCurrentOrders();
+    const axes = getPhAxes();
     const now = Date.now();
-    const payload = { rev: now, orders, updatedAt: { '.sv': 'timestamp' } };
-    await patchFirebase(FIREBASE_SESSION_PATH, payload);
-    showToast('Sortierung gespeichert');
+    const payload = {
+      rev: now,
+      fromCueId: axes?.fromCueId ?? null,
+      toCueId: axes?.toCueId ?? null,
+      orders,
+      updatedAt: { '.sv': 'timestamp' }
+    };
+    const ok = await patchFirebase(FIREBASE_SESSION_PATH, payload);
+    if (ok) {
+      lastRemoteRev = now;
+      showToast('Sortierung hochgeladen');
+      clearRemoteHistory();
+    } else {
+      showToast('Upload fehlgeschlagen');
+    }
   }
 
   async function pullOrdersFromFirebase() {
     const session = await tryFetchJson(FIREBASE_SESSION_PATH);
-    if (!session || !session.orders) return false;
-    if (session.rev && lastRemoteRev && session.rev === lastRemoteRev) return false;
+    if (!session || !session.orders) return { changed: false, hadData: false };
+    if (session.rev && lastRemoteRev && session.rev === lastRemoteRev) return { changed: false, hadData: true };
     lastRemoteRev = session.rev || null;
     applyOrders(session.orders);
-    return true;
+    return { changed: true, hadData: true };
   }
 
   function mapStatusToRowClass(statusKind) {
@@ -1068,6 +1136,7 @@
     setAllCollapsed(false);
 
     recomputeAllSections();
+    clearRemoteHistory();
     await pullOrdersFromFirebase();
     showToast('Aktualisiert');
   }
@@ -1084,6 +1153,9 @@
           <div class="toolbarRight">
             <button class="btn iconBtn" id="axesBtn" type="button" title="Achsen" aria-label="Achsen">&#x25A6;</button>
             <button class="btn iconBtn" id="syncRefreshBtn" type="button" title="Sortierung aktualisieren" aria-label="Sortierung aktualisieren">&#x21BB;</button>
+            <button class="btn iconBtn" id="syncUndoBtn" type="button" title="Rückgängig (nur nach Cloud-Änderung)" aria-label="Rückgängig" disabled>&#x21B6;</button>
+            <button class="btn iconBtn" id="syncRedoBtn" type="button" title="Vorwärts (nur nach Cloud-Änderung)" aria-label="Vorwärts" disabled>&#x21B7;</button>
+            <button class="btn iconBtn" id="syncUploadBtn" type="button" title="Sortierung hochladen (Cloud überschreiben)" aria-label="Sortierung hochladen">&#x2B06;</button>
             <button class="btn iconBtn" id="helpBtn" type="button" title="Hilfe" aria-label="Hilfe">?</button>
           </div>
         </div>
