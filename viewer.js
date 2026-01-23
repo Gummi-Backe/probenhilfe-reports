@@ -71,35 +71,6 @@
       const idx = el.querySelector('.stepIndex');
       if (idx) idx.textContent = String(i + 1);
     });
-
-    document.getElementById('syncUndoBtn')?.addEventListener('click', (e) => {
-      e.preventDefault();
-      if (remoteUndoStack.length === 0) return;
-      const current = cloneOrders(getCurrentOrders());
-      const snapshot = remoteUndoStack.pop();
-      remoteRedoStack.push(current);
-      applyOrders(snapshot);
-      updateRemoteButtons();
-      showToast('Rückgängig');
-    });
-
-    document.getElementById('syncRedoBtn')?.addEventListener('click', (e) => {
-      e.preventDefault();
-      if (remoteRedoStack.length === 0) return;
-      const current = cloneOrders(getCurrentOrders());
-      const snapshot = remoteRedoStack.pop();
-      remoteUndoStack.push(current);
-      applyOrders(snapshot);
-      updateRemoteButtons();
-      showToast('Vorwärts');
-    });
-
-    document.getElementById('syncUploadBtn')?.addEventListener('click', async (e) => {
-      e.preventDefault();
-      await uploadOrdersToFirebase();
-    });
-
-    updateRemoteButtons();
   }
 
   function setAllCollapsed(collapsed) {
@@ -633,6 +604,35 @@
       }
       showToast(changed ? 'Sortierung aktualisiert' : 'Keine Änderung');
     });
+
+    document.getElementById('syncUndoBtn')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (remoteUndoStack.length === 0) return;
+      const current = cloneOrders(getCurrentOrders());
+      const snapshot = remoteUndoStack.pop();
+      remoteRedoStack.push(current);
+      applyOrders(snapshot);
+      updateRemoteButtons();
+      showToast('Rückgängig');
+    });
+
+    document.getElementById('syncRedoBtn')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (remoteRedoStack.length === 0) return;
+      const current = cloneOrders(getCurrentOrders());
+      const snapshot = remoteRedoStack.pop();
+      remoteUndoStack.push(current);
+      applyOrders(snapshot);
+      updateRemoteButtons();
+      showToast('Vorwärts');
+    });
+
+    document.getElementById('syncUploadBtn')?.addEventListener('click', async (e) => {
+      e.preventDefault();
+      await uploadOrdersToFirebase();
+    });
+
+    updateRemoteButtons();
   }
 
   function applyOrders(orders) {
@@ -689,7 +689,6 @@
   function notifyOrderChanged() {
     recomputeAllSections();
     // Manuelle Sortierung soll keine Undo/Redo-History erzeugen (Undo/Redo ist nur für "Sortierung aktualisieren").
-    clearRemoteHistory();
   }
 
   async function uploadOrdersToFirebase() {
@@ -707,7 +706,6 @@
     if (ok) {
       lastRemoteRev = now;
       showToast('Sortierung hochgeladen');
-      clearRemoteHistory();
     } else {
       showToast('Upload fehlgeschlagen');
     }
