@@ -594,6 +594,35 @@
   function enableFirebaseSync() {
     document.getElementById('syncRefreshBtn')?.addEventListener('click', async (e) => {
       e.preventDefault();
+      const report = await tryFetchJson(`${FIREBASE_SESSION_PATH}/report`);
+      if (!report) {
+        showToast('Keine Daten');
+        return;
+      }
+
+      const newKey = String(report?.generatedAt || report?.subtitle || report?.title || 'current');
+      const reportChanged = !currentReportKey || newKey !== currentReportKey;
+
+      if (reportChanged) {
+        phData = report.phData || null;
+        phAxes = report.phAxes || null;
+        lastRemoteRev = null;
+
+        await renderReport(report);
+
+        const compactToggle = document.getElementById('compactToggle');
+        if (compactToggle) compactToggle.checked = false;
+        setAllCollapsed(false);
+        recomputeAllSections();
+
+        clearRemoteHistory();
+
+        await pullOrdersFromFirebase(); // keine Undo/Redo-History für einen neuen Report
+        showToast('Cue-Sequenz aktualisiert');
+        return;
+      }
+
+      // Report unverändert -> nur Sortierung aktualisieren und Undo/Redo-History pflegen.
       const before = cloneOrders(getCurrentOrders());
       const res = await pullOrdersFromFirebase();
       const changed = !!res.changed;
