@@ -47,6 +47,32 @@
       .replaceAll("'", '&#39;');
   }
 
+  function fnv1a32(str) {
+    let hash = 0x811c9dc5;
+    const s = String(str ?? '');
+    for (let i = 0; i < s.length; i++) {
+      hash ^= s.charCodeAt(i);
+      hash = Math.imul(hash, 0x01000193);
+    }
+    return (hash >>> 0).toString(16).padStart(8, '0');
+  }
+
+  function computeReportKey(report) {
+    const r = report || {};
+    const gen = String(r.generatedAt || '');
+    const sub = String(r.subtitle || '');
+    const from = (r.phAxes && r.phAxes.fromCueId != null) ? String(r.phAxes.fromCueId) : '';
+    const to = (r.phAxes && r.phAxes.toCueId != null) ? String(r.phAxes.toCueId) : '';
+    const sections = Array.isArray(r.sections) ? r.sections : [];
+    const sig = sections.map(sec => {
+      const sid = String(sec?.sid || '');
+      const steps = Array.isArray(sec?.steps) ? sec.steps : [];
+      const ids = steps.map(st => String(st?.stepId || '')).join(',');
+      return `${sid}:${ids}`;
+    }).join('|');
+    return `${gen}|${from}->${to}|${sub}|${sig}`;
+  }
+
   function eventTargetElement(e) {
     const t = e?.target;
     if (t instanceof Element) return t;
@@ -136,7 +162,7 @@
   function getPhAxes() { return phAxes; }
 
   function doneStorageKey() {
-    const k = (currentReportKey || 'current').replace(/\s+/g, ' ').trim();
+    const k = String(currentReportKey || 'current').trim();
     return `PH_DONE:${k}`;
   }
 
@@ -600,7 +626,7 @@
         return;
       }
 
-      const newKey = String(report?.generatedAt || report?.subtitle || report?.title || 'current');
+      const newKey = fnv1a32(computeReportKey(report));
       const reportChanged = !currentReportKey || newKey !== currentReportKey;
 
       if (reportChanged) {
@@ -1009,7 +1035,7 @@
 
   async function renderReport(report) {
     await ensureAxisMetaLoaded(false);
-    currentReportKey = String(report?.generatedAt || report?.subtitle || report?.title || 'current');
+    currentReportKey = fnv1a32(computeReportKey(report));
 
     const titleEl = document.getElementById('reportTitle');
     const subtitleEl = document.getElementById('reportSubtitle');
@@ -1226,16 +1252,30 @@
               <li>Tippe auf einen Cue-Kopf, um genau diesen Cue ein- oder auszuklappen.</li>
               <li><span class="kbd">&#9776;</span> Kompaktmodus (gut zum Sortieren).</li>
             </ul>
+            <h3>Buttons oben</h3>
+            <ul>
+              <li><span class="kbd">?</span> &Ouml;ffnet diese Hilfe.</li>
+              <li><span class="kbd">&#x25A6;</span> Achsen-Ansicht.</li>
+              <li><span class="kbd">&#x21BB;</span> Aktualisieren (Cue-Sequenz/Sortierung aus der Cloud laden).</li>
+              <li><span class="kbd">&#x21B6;</span>/<span class="kbd">&#x21B7;</span> R&uuml;ckg&auml;ngig/Vorw&auml;rts (nur nach Aktualisieren).</li>
+              <li><span class="kbd">&#x2B06;</span> Sortierung hochladen (Cloud &uuml;berschreiben).</li>
+            </ul>
             <h3>Sortieren</h3>
             <ul>
               <li>Zum Verschieben am <span class="kbd">=</span>-Griff ziehen.</li>
-              <li>Im Kompaktmodus helfen die <span class="kbd">↑</span>/<span class="kbd">↓</span>-Buttons.</li>
-              <li>Nach einer Änderung wird die Sortierung automatisch (kurz verzögert) in die Cloud gespeichert.</li>
-              <li><span class="kbd">&#x21BB;</span> Sortierung aktualisieren: lädt die aktuell gespeicherte Sortierung aus der Cloud (überschreibt deine lokale).</li>
+              <li>Die Buttons <span class="kbd">↑</span>/<span class="kbd">↓</span> verschieben einen Cue um eine Position (funktioniert immer).</li>
+              <li><span class="kbd">&#x2B06;</span> Sortierung hochladen: speichert deine aktuelle Sortierung in die Cloud (überschreibt die Cloud).</li>
+              <li><span class="kbd">&#x21BB;</span> Aktualisieren: lädt die Cue-Sequenz/Sortierung aus der Cloud (überschreibt deine lokale). Wenn in Probenhilfe eine neue Cue-Sequenz ver&ouml;ffentlicht wurde, wird die Seite dabei auch aktualisiert.</li>
+              <li><span class="kbd">&#x21B6;</span>/<span class="kbd">&#x21B7;</span> R&uuml;ckg&auml;ngig/Vorw&auml;rts: springt zwischen den zuletzt geladenen Cloud-Varianten (nur nach Aktualisieren).</li>
+            </ul>
+            <h3>Erledigt</h3>
+            <ul>
+              <li>Tippe auf <span class="kbd">F&auml;hrt: ...</span>, um einen Cue als erledigt zu markieren (blasser). Nochmal tippen macht es r&uuml;ckg&auml;ngig.</li>
             </ul>
             <h3>Achsen</h3>
             <ul>
-              <li><span class="kbd">&#x25A6;</span> Zeigt die Zielwerte der Achsen für den aktuellen Cue-Sprung (wie in der App).</li>
+              <li><span class="kbd">&#x25A6;</span> Zeigt die Zielwerte der Achsen f&uuml;r den aktuellen Cue-Sprung.</li>
+              <li><span class="kbd">&#x21C5;</span> Sortiert die gelb markierten (ver&auml;nderten) Achsen nach oben.</li>
             </ul>
           </div>
         </div>
