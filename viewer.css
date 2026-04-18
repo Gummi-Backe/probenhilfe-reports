@@ -207,11 +207,12 @@ body.modalOpen{
   text-align:right;
   color:var(--muted);
   font-variant-numeric:tabular-nums;
+  font-size:18px;
 }
 .stepTitle{display:flex; gap:8px; align-items:center; min-width:0; flex-wrap:wrap}
 .dirBadge{
-  font-size:12px;
-  padding:4px 8px;
+  font-size:18px;
+  padding:6px 10px;
   border-radius:999px;
   border:1px solid rgba(255,255,255,.10);
   color:var(--text);
@@ -220,7 +221,14 @@ body.modalOpen{
 }
 .dirForward{border-color:rgba(59,130,246,.55); background:rgba(59,130,246,.12)}
 .dirBackward{border-color:rgba(239,68,68,.55); background:rgba(239,68,68,.12)}
-.cueText{white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:520px}
+.cueText{
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  max-width:520px;
+  font-size:20px;
+  font-weight:700;
+}
 .badges{display:flex; align-items:center; gap:6px; flex:0 0 auto}
 .badge{
   display:inline-flex;
