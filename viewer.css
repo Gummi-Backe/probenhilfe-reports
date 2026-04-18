@@ -166,6 +166,7 @@ body.modalOpen{
   justify-content:space-between;
   gap:10px;
   padding:10px 10px;
+  font-size:18px;
   cursor:pointer;
   user-select:none;
   touch-action:pan-y;
@@ -234,11 +235,11 @@ body.modalOpen{
   display:inline-flex;
   align-items:center;
   gap:6px;
-  padding:4px 8px;
+  padding:6px 10px;
   border-radius:999px;
   border:1px solid rgba(255,255,255,.10);
   background:rgba(255,255,255,.03);
-  font-size:12px;
+  font-size:18px;
   color:var(--muted);
 }
 .badge.warn{border-color:rgba(239,68,68,.45); color:#fecaca; background:rgba(239,68,68,.10)}
