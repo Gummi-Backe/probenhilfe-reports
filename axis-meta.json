@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": 1769387018,
+  "updatedAt": 1776545124,
   "axes": [
     {
       "axisId": 25,
@@ -53,7 +53,7 @@
     {
       "axisId": 52,
       "shortName": "Coro H 1",
-      "longName": "Coronation Hanger 1",
+      "longName": "Corona 1",
       "sortOrder": 70,
       "enabled": true,
       "colorHex": "#AEAE00"
@@ -133,7 +133,7 @@
     {
       "axisId": 53,
       "shortName": "Coro H 2",
-      "longName": "Coronation Hanger 2",
+      "longName": "Corona 2",
       "sortOrder": 170,
       "enabled": true,
       "colorHex": "#AEAE00"
@@ -189,7 +189,7 @@
     {
       "axisId": 33,
       "shortName": "APorDS",
-      "longName": "[Apo1]  Arendelle Portal",
+      "longName": "Portal 1",
       "sortOrder": 240,
       "enabled": true,
       "colorHex": "#A346FF"
@@ -197,7 +197,7 @@
     {
       "axisId": 9,
       "shortName": "APorUS",
-      "longName": "[Apo1]  Arendelle Portal",
+      "longName": "Portal 1",
       "sortOrder": 250,
       "enabled": true,
       "colorHex": "#A346FF"
@@ -205,7 +205,7 @@
     {
       "axisId": 63,
       "shortName": "AP1 Tr",
-      "longName": "Arendel Portal 1 Travelle",
+      "longName": "Portal 1 Travelle",
       "sortOrder": 260,
       "enabled": true,
       "colorHex": "#A346FF"
@@ -213,7 +213,7 @@
     {
       "axisId": 36,
       "shortName": "AWinDS",
-      "longName": "[AWall]  Arendelle Wall /",
+      "longName": "Winow Wall",
       "sortOrder": 270,
       "enabled": true,
       "colorHex": "#FFFF00"
@@ -221,7 +221,7 @@
     {
       "axisId": 17,
       "shortName": "AWinUS",
-      "longName": "[AWall]  Arendelle Wall /",
+      "longName": "Winow Wall",
       "sortOrder": 280,
       "enabled": true,
       "colorHex": "#FFFF00"
@@ -269,15 +269,15 @@
     {
       "axisId": 10,
       "shortName": "APor 2",
-      "longName": "[APort2]  Arendelle Portal",
+      "longName": "Portal 2",
       "sortOrder": 340,
       "enabled": true,
       "colorHex": "#A346FF"
     },
     {
       "axisId": 15,
-      "shortName": "APor 3",
-      "longName": "[APort2]  Arendelle Portal",
+      "shortName": "E 04",
+      "longName": "Portal 2",
       "sortOrder": 350,
       "enabled": true,
       "colorHex": "#A346FF"
@@ -285,7 +285,7 @@
     {
       "axisId": 64,
       "shortName": "AP2 Tr",
-      "longName": "Arendel Portal 2 Travelle",
+      "longName": "Portal 2 Travelle",
       "sortOrder": 360,
       "enabled": true,
       "colorHex": "#A346FF"
@@ -344,7 +344,7 @@
       "longName": "Lichtleiter 1 SR",
       "sortOrder": 430,
       "enabled": true,
-      "colorHex": "#00BF00"
+      "colorHex": "#00FF00"
     },
     {
       "axisId": 41,
@@ -352,7 +352,7 @@
       "longName": "Lichtleiter 2 SR",
       "sortOrder": 440,
       "enabled": true,
-      "colorHex": "#00BF00"
+      "colorHex": "#00FF00"
     },
     {
       "axisId": 43,
@@ -360,7 +360,7 @@
       "longName": "Lichtleiter 3 SR",
       "sortOrder": 450,
       "enabled": true,
-      "colorHex": "#00BF00"
+      "colorHex": "#00FF00"
     },
     {
       "axisId": 45,
@@ -368,7 +368,7 @@
       "longName": "Lichtleiter 4 SR",
       "sortOrder": 460,
       "enabled": true,
-      "colorHex": "#00BF00"
+      "colorHex": "#00FF00"
     },
     {
       "axisId": 47,
@@ -376,7 +376,7 @@
       "longName": "Lichtleiter 5 SR",
       "sortOrder": 470,
       "enabled": true,
-      "colorHex": "#00BF00"
+      "colorHex": "#00FF00"
     },
     {
       "axisId": 49,
@@ -384,7 +384,7 @@
       "longName": "Lichtleiter 6 SR",
       "sortOrder": 480,
       "enabled": true,
-      "colorHex": "#00BF00"
+      "colorHex": "#00FF00"
     },
     {
       "axisId": 55,
@@ -468,7 +468,7 @@
     },
     {
       "axisId": 83,
-      "shortName": "CenT",
+      "shortName": "CetT",
       "longName": "Center Track",
       "sortOrder": 590,
       "enabled": true,
@@ -477,7 +477,7 @@
     {
       "axisId": 88,
       "shortName": "U \u002B S",
-      "longName": "Umbrella \u0026 Surfboard",
+      "longName": "Umbrella",
       "sortOrder": 600,
       "enabled": true,
       "colorHex": "#FF7648"
@@ -565,7 +565,7 @@
     {
       "axisId": 85,
       "shortName": "ILT1SL",
-      "longName": "Ice Legs Traveller 1 SL",
+      "longName": "Ice Legs 1 SL",
       "sortOrder": 710,
       "enabled": true,
       "colorHex": "#41A3F3"
@@ -573,7 +573,7 @@
     {
       "axisId": 87,
       "shortName": "ILT2SL",
-      "longName": "Ice Legs Traveller 2 SL",
+      "longName": "Ice Legs 2 SL",
       "sortOrder": 720,
       "enabled": true,
       "colorHex": "#41A3F3"
@@ -581,7 +581,7 @@
     {
       "axisId": 84,
       "shortName": "ILT1SR",
-      "longName": "Ice Legs Traveller 1 SR",
+      "longName": "Ice Legs 1 SR",
       "sortOrder": 730,
       "enabled": true,
       "colorHex": "#41A3F3"
@@ -589,7 +589,7 @@
     {
       "axisId": 86,
       "shortName": "ILT2SR",
-      "longName": "Ice Legs Traveller 2 SR",
+      "longName": "Ice Legs 2 SR",
       "sortOrder": 740,
       "enabled": true,
       "colorHex": "#41A3F3"
@@ -620,8 +620,8 @@
     },
     {
       "axisId": 77,
-      "shortName": "IceDir",
-      "longName": "Ice Strike Richtung",
+      "shortName": "IceStrDir",
+      "longName": "Ice Strike Dir",
       "sortOrder": 780,
       "enabled": true,
       "colorHex": "#800000"
@@ -673,14 +673,6 @@
       "sortOrder": 840,
       "enabled": true,
       "colorHex": "#DDAAAA"
-    },
-    {
-      "axisId": 0,
-      "shortName": "Achse 0",
-      "longName": "Achse 0",
-      "sortOrder": 850,
-      "enabled": false,
-      "colorHex": null
     }
   ]
 }
