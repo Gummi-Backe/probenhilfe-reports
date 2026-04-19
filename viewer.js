@@ -1,24 +1,313 @@
 (() => {
   const FIREBASE_DB_BASE = String(window.PH_FIREBASE_DB_BASE || '').trim().replace(/\/+$/, '');
-  const FIREBASE_SESSION_PATH = 'sessions/current';
+  const FIREBASE_API_KEY = String(window.PH_FIREBASE_API_KEY || '').trim();
+  const FIREBASE_AUTH_EMAIL_KEY = 'PH_FIREBASE_AUTH_V1:email';
+  const FIREBASE_AUTH_REFRESH_TOKEN_KEY = 'PH_FIREBASE_AUTH_V1:refreshToken';
+  const FIREBASE_AUTH_USER_ID_KEY = 'PH_FIREBASE_AUTH_V1:userId';
 
-  function firebaseUrl(path) {
+  let firebaseAuthState = {
+    email: '',
+    userId: '',
+    idToken: '',
+    refreshToken: '',
+    expiresAtUtcMs: 0
+  };
+  let firebaseAuthPromptPromise = null;
+  let firebaseAuthPromptResolve = null;
+  let firebaseAuthBusy = false;
+
+  function firebaseUrl(path, idToken) {
     if (!FIREBASE_DB_BASE) return null;
     const base = FIREBASE_DB_BASE.replace(/\/+$/, '');
     const p = String(path || '').replace(/^\/+/, '');
-    return `${base}/${p}.json`;
+    const url = `${base}/${p}.json`;
+    if (!idToken) return url;
+    return `${url}?auth=${encodeURIComponent(idToken)}`;
   }
 
-  async function tryFetchJson(path) {
-    const url = firebaseUrl(path);
+  function firebaseSessionPath() {
+    return firebaseAuthState.userId ? `theaters/${firebaseAuthState.userId}/sessions/current` : null;
+  }
+
+  function hasValidFirebaseIdToken() {
+    return !!firebaseAuthState.idToken && firebaseAuthState.expiresAtUtcMs > (Date.now() + 60000);
+  }
+
+  function loadStoredFirebaseAuth() {
+    try {
+      firebaseAuthState.email = String(localStorage.getItem(FIREBASE_AUTH_EMAIL_KEY) || '').trim();
+      firebaseAuthState.refreshToken = String(localStorage.getItem(FIREBASE_AUTH_REFRESH_TOKEN_KEY) || '').trim();
+      firebaseAuthState.userId = String(localStorage.getItem(FIREBASE_AUTH_USER_ID_KEY) || '').trim();
+    } catch {
+      firebaseAuthState.email = '';
+      firebaseAuthState.refreshToken = '';
+      firebaseAuthState.userId = '';
+    }
+    firebaseAuthState.idToken = '';
+    firebaseAuthState.expiresAtUtcMs = 0;
+  }
+
+  function persistStoredFirebaseAuth() {
+    try {
+      if (firebaseAuthState.email) localStorage.setItem(FIREBASE_AUTH_EMAIL_KEY, firebaseAuthState.email);
+      else localStorage.removeItem(FIREBASE_AUTH_EMAIL_KEY);
+
+      if (firebaseAuthState.refreshToken) localStorage.setItem(FIREBASE_AUTH_REFRESH_TOKEN_KEY, firebaseAuthState.refreshToken);
+      else localStorage.removeItem(FIREBASE_AUTH_REFRESH_TOKEN_KEY);
+
+      if (firebaseAuthState.userId) localStorage.setItem(FIREBASE_AUTH_USER_ID_KEY, firebaseAuthState.userId);
+      else localStorage.removeItem(FIREBASE_AUTH_USER_ID_KEY);
+    } catch {
+      // ignore
+    }
+  }
+
+  function updateFirebaseAuthUi() {
+    const stateText = document.getElementById('authStateText');
+    const signOutBtn = document.getElementById('signOutBtn');
+    if (stateText) {
+      stateText.textContent = firebaseAuthState.email
+        ? `Firebase: ${firebaseAuthState.email}`
+        : 'Firebase: nicht angemeldet';
+    }
+
+    if (signOutBtn) {
+      signOutBtn.style.display = firebaseAuthState.email ? 'inline-flex' : 'none';
+    }
+
+    const authEmail = document.getElementById('authEmail');
+    if (authEmail && !authEmail.value && firebaseAuthState.email) {
+      authEmail.value = firebaseAuthState.email;
+    }
+  }
+
+  function clearStoredFirebaseAuth() {
+    firebaseAuthState = {
+      email: '',
+      userId: '',
+      idToken: '',
+      refreshToken: '',
+      expiresAtUtcMs: 0
+    };
+    persistStoredFirebaseAuth();
+    updateFirebaseAuthUi();
+  }
+
+  function openAuthOverlay(message) {
+    const overlay = document.getElementById('authOverlay');
+    const purposeText = document.getElementById('authPurposeText');
+    const statusText = document.getElementById('authStatusText');
+    if (!overlay) return;
+    if (purposeText) purposeText.textContent = String(message || '');
+    if (statusText) statusText.textContent = '';
+    overlay.classList.add('open');
+    document.body.classList.add('modalOpen');
+    const emailBox = document.getElementById('authEmail');
+    if (emailBox && firebaseAuthState.email && !emailBox.value) {
+      emailBox.value = firebaseAuthState.email;
+    }
+    window.setTimeout(() => {
+      const target = document.getElementById('authEmail') || document.getElementById('authPassword');
+      target?.focus?.();
+    }, 0);
+  }
+
+  function closeAuthOverlay() {
+    const overlay = document.getElementById('authOverlay');
+    if (!overlay) return;
+    overlay.classList.remove('open');
+    const anyOpen = !!document.querySelector('.overlay.open');
+    document.body.classList.toggle('modalOpen', anyOpen);
+  }
+
+  function setAuthStatus(text, isError) {
+    const statusText = document.getElementById('authStatusText');
+    if (!statusText) return;
+    statusText.textContent = String(text || '');
+    statusText.classList.toggle('isError', !!isError);
+  }
+
+  function setAuthBusy(isBusy) {
+    firebaseAuthBusy = !!isBusy;
+    const emailBox = document.getElementById('authEmail');
+    const passwordBox = document.getElementById('authPassword');
+    const continueBtn = document.getElementById('authContinueBtn');
+    const cancelBtn = document.getElementById('authCancelBtn');
+    if (emailBox) emailBox.disabled = firebaseAuthBusy;
+    if (passwordBox) passwordBox.disabled = firebaseAuthBusy;
+    if (continueBtn) continueBtn.disabled = firebaseAuthBusy;
+    if (cancelBtn) cancelBtn.disabled = firebaseAuthBusy;
+  }
+
+  function resolveFirebaseAuthPrompt(value) {
+    if (firebaseAuthPromptResolve) {
+      firebaseAuthPromptResolve(value);
+    }
+    firebaseAuthPromptResolve = null;
+    firebaseAuthPromptPromise = null;
+  }
+
+  function shouldOfferFirebaseAccountCreation(errorCode) {
+    return errorCode === 'EMAIL_NOT_FOUND' || errorCode === 'INVALID_LOGIN_CREDENTIALS';
+  }
+
+  function mapFirebaseAuthError(errorCode, fallbackMessage, duringAccountCreation) {
+    switch (String(errorCode || '').trim()) {
+      case 'EMAIL_EXISTS':
+        return 'Für diese E-Mail gibt es bereits ein Konto. Bitte Passwort prüfen.';
+      case 'INVALID_EMAIL':
+        return 'Die E-Mail-Adresse ist ungültig.';
+      case 'WEAK_PASSWORD':
+        return 'Das Passwort ist zu schwach.';
+      case 'INVALID_LOGIN_CREDENTIALS':
+        return duringAccountCreation
+          ? 'Konto konnte nicht erstellt werden. Bitte E-Mail und Passwort prüfen.'
+          : 'Anmeldung fehlgeschlagen. Bitte E-Mail und Passwort prüfen.';
+      case 'TOO_MANY_ATTEMPTS_TRY_LATER':
+        return 'Zu viele Versuche. Bitte später noch einmal probieren.';
+      case 'USER_DISABLED':
+        return 'Dieses Konto wurde deaktiviert.';
+      default:
+        return fallbackMessage || (duringAccountCreation ? 'Konto konnte nicht erstellt werden.' : 'Anmeldung fehlgeschlagen.');
+    }
+  }
+
+  function applyFirebaseAuthData(data, emailFallback) {
+    const expiresInSeconds = Math.max(parseInt(String(data.expiresIn || data.expires_in || '3600'), 10) || 3600, 60);
+    firebaseAuthState = {
+      email: String(data.email || emailFallback || firebaseAuthState.email || '').trim(),
+      userId: String(data.localId || data.user_id || firebaseAuthState.userId || '').trim(),
+      idToken: String(data.idToken || data.id_token || '').trim(),
+      refreshToken: String(data.refreshToken || data.refresh_token || '').trim(),
+      expiresAtUtcMs: Date.now() + expiresInSeconds * 1000
+    };
+    persistStoredFirebaseAuth();
+    updateFirebaseAuthUi();
+    return firebaseAuthState;
+  }
+
+  async function requestFirebaseIdentity(url, payload, asForm) {
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: asForm ? { 'Content-Type': 'application/x-www-form-urlencoded' } : { 'Content-Type': 'application/json' },
+        body: asForm ? String(payload || '') : JSON.stringify(payload || {})
+      });
+      let json = null;
+      try { json = await res.json(); } catch { json = null; }
+      if (!res.ok) {
+        return {
+          ok: false,
+          errorCode: String(json?.error?.message || '').trim() || null,
+          errorMessage: String(json?.error?.message || '').trim() || null
+        };
+      }
+      return { ok: true, json };
+    } catch (err) {
+      return {
+        ok: false,
+        errorCode: null,
+        errorMessage: err?.message || 'Netzwerkfehler'
+      };
+    }
+  }
+
+  async function signInFirebase(email, password) {
+    const url = `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${encodeURIComponent(FIREBASE_API_KEY)}`;
+    const result = await requestFirebaseIdentity(url, {
+      email,
+      password,
+      returnSecureToken: true
+    }, false);
+    if (!result.ok) return result;
+    applyFirebaseAuthData(result.json || {}, email);
+    return { ok: true };
+  }
+
+  async function signUpFirebase(email, password) {
+    const url = `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${encodeURIComponent(FIREBASE_API_KEY)}`;
+    const result = await requestFirebaseIdentity(url, {
+      email,
+      password,
+      returnSecureToken: true
+    }, false);
+    if (!result.ok) return result;
+    applyFirebaseAuthData(result.json || {}, email);
+    return { ok: true };
+  }
+
+  async function refreshFirebaseAccessToken() {
+    if (!FIREBASE_API_KEY || !firebaseAuthState.refreshToken) return false;
+    const url = `https://securetoken.googleapis.com/v1/token?key=${encodeURIComponent(FIREBASE_API_KEY)}`;
+    const result = await requestFirebaseIdentity(
+      url,
+      `grant_type=refresh_token&refresh_token=${encodeURIComponent(firebaseAuthState.refreshToken)}`,
+      true);
+    if (!result.ok) {
+      clearStoredFirebaseAuth();
+      return false;
+    }
+    applyFirebaseAuthData(result.json || {}, firebaseAuthState.email);
+    return true;
+  }
+
+  function promptForFirebaseAccess(purpose) {
+    if (!firebaseAuthPromptPromise) {
+      firebaseAuthPromptPromise = new Promise(resolve => {
+        firebaseAuthPromptResolve = resolve;
+      });
+    }
+    openAuthOverlay(`Anmeldung erforderlich, um ${purpose}.`);
+    return firebaseAuthPromptPromise;
+  }
+
+  async function ensureFirebaseAccess(interactive, purpose) {
+    if (!FIREBASE_DB_BASE || !FIREBASE_API_KEY) {
+      if (interactive) {
+        openAuthOverlay('Firebase ist noch nicht vollständig konfiguriert.');
+        setAuthStatus('Bitte Firebase-Datenbank-URL und Firebase Web API-Key in Probenhilfe eintragen.', true);
+      }
+      return null;
+    }
+
+    if (hasValidFirebaseIdToken()) {
+      return firebaseAuthState.idToken;
+    }
+
+    if (firebaseAuthState.refreshToken) {
+      const refreshed = await refreshFirebaseAccessToken();
+      if (refreshed && hasValidFirebaseIdToken()) {
+        return firebaseAuthState.idToken;
+      }
+    }
+
+    if (!interactive) {
+      return null;
+    }
+
+    return await promptForFirebaseAccess(purpose);
+  }
+
+  async function ensureFirebaseSessionPath(interactive, purpose) {
+    const idToken = await ensureFirebaseAccess(!!interactive, purpose);
+    if (!idToken) return null;
+    return firebaseSessionPath();
+  }
+
+  async function tryFetchJson(path, interactive, purpose) {
+    const idToken = await ensureFirebaseAccess(!!interactive, purpose || 'die Daten aus Firebase zu laden');
+    if (!idToken) return null;
+    const url = firebaseUrl(path, idToken);
     if (!url) return null;
     const res = await fetch(url, { cache: 'no-store' });
     if (!res.ok) return null;
     try { return await res.json(); } catch { return null; }
   }
 
-  async function patchFirebase(path, payload) {
-    const url = firebaseUrl(path);
+  async function patchFirebase(path, payload, interactive, purpose) {
+    const idToken = await ensureFirebaseAccess(!!interactive, purpose || 'die Daten in Firebase zu speichern');
+    if (!idToken) return false;
+    const url = firebaseUrl(path, idToken);
     if (!url) return false;
     const res = await fetch(url, {
       method: 'PATCH',
@@ -620,7 +909,13 @@
   function enableFirebaseSync() {
     document.getElementById('syncRefreshBtn')?.addEventListener('click', async (e) => {
       e.preventDefault();
-      const report = await tryFetchJson(`${FIREBASE_SESSION_PATH}/report`);
+      const sessionPath = await ensureFirebaseSessionPath(true, 'die Cue-Sequenz aus dem Online-Speicher zu laden');
+      if (!sessionPath) {
+        showToast('Anmeldung abgebrochen');
+        return;
+      }
+
+      const report = await tryFetchJson(`${sessionPath}/report`, false, 'die Cue-Sequenz aus dem Online-Speicher zu laden');
       if (!report) {
         showToast('Keine Daten');
         return;
@@ -643,14 +938,14 @@
 
         clearRemoteHistory();
 
-        await pullOrdersFromFirebase(); // keine Undo/Redo-History für einen neuen Report
+        await pullOrdersFromFirebase(false); // keine Undo/Redo-History für einen neuen Report
         showToast('Cue-Sequenz aktualisiert');
         return;
       }
 
       // Report unverändert -> nur Sortierung aktualisieren und Undo/Redo-History pflegen.
       const before = cloneOrders(getCurrentOrders());
-      const res = await pullOrdersFromFirebase();
+      const res = await pullOrdersFromFirebase(false);
       const changed = !!res.changed;
       if (changed) {
         remoteUndoStack.push(before);
@@ -688,6 +983,81 @@
     });
 
     updateRemoteButtons();
+  }
+
+  function initializeFirebaseAuthUi() {
+    updateFirebaseAuthUi();
+
+    document.getElementById('signOutBtn')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      clearStoredFirebaseAuth();
+      closeAuthOverlay();
+      setAuthStatus('', false);
+      showToast('Abgemeldet');
+    });
+
+    document.getElementById('authContinueBtn')?.addEventListener('click', async (e) => {
+      e.preventDefault();
+      if (firebaseAuthBusy) return;
+
+      const emailBox = document.getElementById('authEmail');
+      const passwordBox = document.getElementById('authPassword');
+      const email = String(emailBox?.value || '').trim();
+      const password = String(passwordBox?.value || '');
+
+      if (!email || !password) {
+        setAuthStatus('Bitte E-Mail und Passwort eingeben.', true);
+        return;
+      }
+
+      setAuthBusy(true);
+      setAuthStatus('Anmeldung läuft ...', false);
+
+      let result = await signInFirebase(email, password);
+      let usedAccountCreation = false;
+      if (!result.ok && shouldOfferFirebaseAccountCreation(result.errorCode)) {
+        const createAccount = window.confirm('Für diese E-Mail gibt es noch kein Konto. Soll jetzt direkt eines erstellt werden?');
+        if (createAccount) {
+          usedAccountCreation = true;
+          setAuthStatus('Konto wird erstellt ...', false);
+          result = await signUpFirebase(email, password);
+        }
+      }
+
+      if (result.ok) {
+        if (passwordBox) passwordBox.value = '';
+        closeAuthOverlay();
+        setAuthBusy(false);
+        resolveFirebaseAuthPrompt(firebaseAuthState.idToken);
+        showToast(usedAccountCreation ? 'Konto erstellt' : 'Angemeldet');
+        return;
+      }
+
+      setAuthBusy(false);
+      setAuthStatus(mapFirebaseAuthError(result.errorCode, result.errorMessage, usedAccountCreation), true);
+    });
+
+    document.getElementById('authCancelBtn')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (firebaseAuthBusy) return;
+      closeAuthOverlay();
+      resolveFirebaseAuthPrompt(null);
+    });
+
+    document.getElementById('authOverlay')?.addEventListener('click', (e) => {
+      if (firebaseAuthBusy) return;
+      if (e.target !== e.currentTarget) return;
+      closeAuthOverlay();
+      resolveFirebaseAuthPrompt(null);
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape' || firebaseAuthBusy) return;
+      const overlay = document.getElementById('authOverlay');
+      if (!overlay?.classList.contains('open')) return;
+      closeAuthOverlay();
+      resolveFirebaseAuthPrompt(null);
+    });
   }
 
   function applyOrders(orders) {
@@ -747,6 +1117,12 @@
   }
 
   async function uploadOrdersToFirebase() {
+    const sessionPath = await ensureFirebaseSessionPath(true, 'die Sortierung im Online-Speicher zu speichern');
+    if (!sessionPath) {
+      showToast('Anmeldung abgebrochen');
+      return;
+    }
+
     const orders = getCurrentOrders();
     const axes = getPhAxes();
     const now = Date.now();
@@ -757,7 +1133,7 @@
       orders,
       updatedAt: { '.sv': 'timestamp' }
     };
-    const ok = await patchFirebase(FIREBASE_SESSION_PATH, payload);
+    const ok = await patchFirebase(sessionPath, payload, false, 'die Sortierung im Online-Speicher zu speichern');
     if (ok) {
       lastRemoteRev = now;
       showToast('Sortierung hochgeladen');
@@ -766,8 +1142,11 @@
     }
   }
 
-  async function pullOrdersFromFirebase() {
-    const session = await tryFetchJson(FIREBASE_SESSION_PATH);
+  async function pullOrdersFromFirebase(interactive) {
+    const sessionPath = await ensureFirebaseSessionPath(!!interactive, 'die Sortierung aus dem Online-Speicher zu laden');
+    if (!sessionPath) return { changed: false, hadData: false };
+
+    const session = await tryFetchJson(sessionPath, false, 'die Sortierung aus dem Online-Speicher zu laden');
     if (!session || !session.orders) return { changed: false, hadData: false };
     if (session.rev && lastRemoteRev && session.rev === lastRemoteRev) return { changed: false, hadData: true };
     lastRemoteRev = session.rev || null;
@@ -1169,7 +1548,16 @@
   }
 
   async function loadReport() {
-    const report = await tryFetchJson(`${FIREBASE_SESSION_PATH}/report`);
+    const sessionPath = await ensureFirebaseSessionPath(true, 'die Cue-Sequenz aus dem Online-Speicher zu laden');
+    if (!sessionPath) {
+      document.getElementById('reportTitle').textContent = 'Anmeldung erforderlich';
+      document.getElementById('reportSubtitle').textContent = '';
+      document.getElementById('reportMeta').textContent = '';
+      document.getElementById('sectionsHost').innerHTML = '';
+      return;
+    }
+
+    const report = await tryFetchJson(`${sessionPath}/report`, false, 'die Cue-Sequenz aus dem Online-Speicher zu laden');
     if (!report) {
       document.getElementById('reportTitle').textContent = 'Noch keine Cue-Sequenz veröffentlicht.';
       document.getElementById('reportSubtitle').textContent = '';
@@ -1190,7 +1578,7 @@
 
     recomputeAllSections();
     clearRemoteHistory();
-    await pullOrdersFromFirebase();
+    await pullOrdersFromFirebase(false);
     showToast('Aktualisiert');
   }
 
@@ -1202,6 +1590,8 @@
         <div class="toolbarInner">
           <div class="toolbarLeft">
             <label class="toggle" title="Kompaktmodus (zum Sortieren)"><input id="compactToggle" type="checkbox"/><span class="toggleIcon">&#9776;</span></label>
+            <div class="authState" id="authStateText">Firebase: nicht angemeldet</div>
+            <button class="btn authBtn" id="signOutBtn" type="button" title="Firebase-Abmeldung löschen" aria-label="Abmelden" style="display:none">Abmelden</button>
           </div>
           <div class="toolbarRight">
             <button class="btn iconBtn" id="axesBtn" type="button" title="Achsen" aria-label="Achsen">&#x25A6;</button>
@@ -1214,6 +1604,26 @@
         </div>
       </div>
       <div class="toast" id="toast" aria-live="polite"></div>
+
+      <div class="overlay" id="authOverlay" role="dialog" aria-modal="true" aria-label="Firebase-Anmeldung">
+        <div class="modal authModal">
+          <div class="modalHead">
+            <div class="modalTitle">Firebase-Anmeldung</div>
+          </div>
+          <div class="modalBody">
+            <div class="authHint" id="authPurposeText"></div>
+            <label class="authLabel" for="authEmail">E-Mail</label>
+            <input class="authInput" id="authEmail" type="email" autocomplete="username" />
+            <label class="authLabel" for="authPassword">Passwort</label>
+            <input class="authInput" id="authPassword" type="password" autocomplete="current-password" />
+            <div class="authStatus" id="authStatusText"></div>
+            <div class="authButtons">
+              <button class="btn" id="authCancelBtn" type="button">Abbrechen</button>
+              <button class="btn" id="authContinueBtn" type="button">Weiter</button>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <div class="overlay" id="axesOverlay" role="dialog" aria-modal="true" aria-label="Achsen">
         <div class="modal">
@@ -1313,7 +1723,10 @@
   }
 
   async function start() {
+    loadStoredFirebaseAuth();
     mountUi();
+    updateFirebaseAuthUi();
+    initializeFirebaseAuthUi();
     enableLocalDoneToggle();
     enableCollapse();
     enableReorderButtons();
