@@ -64,15 +64,17 @@
 
   function updateFirebaseAuthUi() {
     const stateText = document.getElementById('authStateText');
-    const signOutBtn = document.getElementById('signOutBtn');
+    const authToggleBtn = document.getElementById('authToggleBtn');
     if (stateText) {
       stateText.textContent = firebaseAuthState.email
         ? `Firebase: ${firebaseAuthState.email}`
         : 'Firebase: nicht angemeldet';
     }
 
-    if (signOutBtn) {
-      signOutBtn.style.display = firebaseAuthState.email ? 'inline-flex' : 'none';
+    if (authToggleBtn) {
+      authToggleBtn.textContent = firebaseAuthState.email ? 'Abmelden' : 'Anmelden';
+      authToggleBtn.setAttribute('aria-label', firebaseAuthState.email ? 'Abmelden' : 'Anmelden');
+      authToggleBtn.setAttribute('title', firebaseAuthState.email ? 'Firebase-Abmeldung löschen' : 'Bei Firebase anmelden');
     }
 
     const authEmail = document.getElementById('authEmail');
@@ -988,12 +990,22 @@
   function initializeFirebaseAuthUi() {
     updateFirebaseAuthUi();
 
-    document.getElementById('signOutBtn')?.addEventListener('click', (e) => {
+    document.getElementById('authToggleBtn')?.addEventListener('click', (e) => {
       e.preventDefault();
-      clearStoredFirebaseAuth();
-      closeAuthOverlay();
-      setAuthStatus('', false);
-      showToast('Abgemeldet');
+      if (firebaseAuthState.email) {
+        clearStoredFirebaseAuth();
+        closeAuthOverlay();
+        setAuthStatus('', false);
+        showToast('Abgemeldet');
+        return;
+      }
+
+      promptForFirebaseAccess('die Cue-Sequenz aus dem Online-Speicher zu laden oder Daten in Firebase zu speichern')
+        .then((idToken) => {
+          if (idToken) {
+            showToast('Angemeldet');
+          }
+        });
     });
 
     document.getElementById('authContinueBtn')?.addEventListener('click', async (e) => {
@@ -1591,7 +1603,7 @@
           <div class="toolbarLeft">
             <label class="toggle" title="Kompaktmodus (zum Sortieren)"><input id="compactToggle" type="checkbox"/><span class="toggleIcon">&#9776;</span></label>
             <div class="authState" id="authStateText">Firebase: nicht angemeldet</div>
-            <button class="btn authBtn" id="signOutBtn" type="button" title="Firebase-Abmeldung löschen" aria-label="Abmelden" style="display:none">Abmelden</button>
+            <button class="btn authBtn" id="authToggleBtn" type="button" title="Bei Firebase anmelden" aria-label="Anmelden">Anmelden</button>
           </div>
           <div class="toolbarRight">
             <button class="btn iconBtn" id="axesBtn" type="button" title="Achsen" aria-label="Achsen">&#x25A6;</button>
