@@ -51,6 +51,23 @@ body.modalOpen{
   -webkit-overflow-scrolling:touch;
 }
 .toolbarLeft,.toolbarRight{display:flex; align-items:center; gap:8px; flex-wrap:nowrap}
+.authState{
+  display:inline-flex;
+  align-items:center;
+  min-height:44px;
+  padding:0 14px;
+  border:1px solid rgba(255,255,255,.10);
+  border-radius:999px;
+  background:rgba(255,255,255,.03);
+  color:var(--muted);
+  font-size:13px;
+  white-space:nowrap;
+}
+.authBtn{
+  min-height:44px;
+  border-radius:999px;
+  white-space:nowrap;
+}
 
 .btn{
   border:1px solid rgba(255,255,255,.10);
@@ -347,6 +364,50 @@ th{color:var(--muted); font-weight:700; text-align:left; font-size:12px}
 .modalTitle{font-weight:800}
 .modalSub{padding:0 12px 8px; color:var(--muted); font-size:12px}
 .modalBody{flex:1; overflow:auto; padding:12px}
+.authModal{
+  max-width:520px;
+  height:auto;
+  margin:8vh auto 0;
+}
+.authHint{
+  color:var(--text);
+  margin-bottom:14px;
+}
+.authLabel{
+  display:block;
+  color:var(--muted);
+  font-size:12px;
+  margin-bottom:6px;
+}
+.authInput{
+  width:100%;
+  margin-bottom:12px;
+  padding:12px 14px;
+  border-radius:10px;
+  border:1px solid rgba(255,255,255,.14);
+  background:rgba(255,255,255,.04);
+  color:var(--text);
+  font-size:14px;
+}
+.authInput:focus{
+  outline:none;
+  border-color:rgba(59,130,246,.75);
+  box-shadow:0 0 0 2px rgba(59,130,246,.20);
+}
+.authStatus{
+  min-height:20px;
+  color:var(--muted);
+  font-size:12px;
+  margin-bottom:12px;
+}
+.authStatus.isError{
+  color:#fecaca;
+}
+.authButtons{
+  display:flex;
+  justify-content:flex-end;
+  gap:8px;
+}
 
 .axesGrid{display:flex; flex-wrap:wrap; gap:10px}
 .axisTile{
@@ -386,4 +447,5 @@ th{color:var(--muted); font-weight:700; text-align:left; font-size:12px}
   .appLogo{width:64px; height:64px}
   .toolbarInner{gap:8px}
   .toolbarLeft,.toolbarRight{gap:6px}
+  .authState{font-size:12px; padding:0 10px}
 }
