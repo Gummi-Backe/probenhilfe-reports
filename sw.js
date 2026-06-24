@@ -7,6 +7,5 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Always go to network (fresh reports). No caching to avoid stale content.
   event.respondWith(fetch(event.request));
 });
