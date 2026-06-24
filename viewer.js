@@ -1,6 +1,6 @@
 (() => {
   const FIREBASE_DB_BASE = String(window.PH_FIREBASE_DB_BASE || '').trim().replace(/\/+$/, '');
-  const FIREBASE_API_KEY = String(window.PH_FIREBASE_API_KEY || '').trim();
+  const BACKEND_BASE = String(window.PH_BACKEND_BASE || '').trim().replace(/\/+$/, '');
   const FIREBASE_AUTH_EMAIL_KEY = 'PH_FIREBASE_AUTH_V1:email';
   const FIREBASE_AUTH_REFRESH_TOKEN_KEY = 'PH_FIREBASE_AUTH_V1:refreshToken';
   const FIREBASE_AUTH_USER_ID_KEY = 'PH_FIREBASE_AUTH_V1:userId';
@@ -74,7 +74,7 @@
     if (authToggleBtn) {
       authToggleBtn.textContent = firebaseAuthState.email ? 'Abmelden' : 'Anmelden';
       authToggleBtn.setAttribute('aria-label', firebaseAuthState.email ? 'Abmelden' : 'Anmelden');
-      authToggleBtn.setAttribute('title', firebaseAuthState.email ? 'Firebase-Abmeldung löschen' : 'Bei Firebase anmelden');
+      authToggleBtn.setAttribute('title', firebaseAuthState.email ? 'Firebase-Abmeldung lÃ¶schen' : 'Bei Firebase anmelden');
     }
 
     const authEmail = document.getElementById('authEmail');
@@ -156,17 +156,17 @@
   function mapFirebaseAuthError(errorCode, fallbackMessage, duringAccountCreation) {
     switch (String(errorCode || '').trim()) {
       case 'EMAIL_EXISTS':
-        return 'Für diese E-Mail gibt es bereits ein Konto. Bitte Passwort prüfen.';
+        return 'FÃ¼r diese E-Mail gibt es bereits ein Konto. Bitte Passwort prÃ¼fen.';
       case 'INVALID_EMAIL':
-        return 'Die E-Mail-Adresse ist ungültig.';
+        return 'Die E-Mail-Adresse ist ungÃ¼ltig.';
       case 'WEAK_PASSWORD':
         return 'Das Passwort ist zu schwach.';
       case 'INVALID_LOGIN_CREDENTIALS':
         return duringAccountCreation
-          ? 'Konto konnte nicht erstellt werden. Bitte E-Mail und Passwort prüfen.'
-          : 'Anmeldung fehlgeschlagen. Bitte E-Mail und Passwort prüfen.';
+          ? 'Konto konnte nicht erstellt werden. Bitte E-Mail und Passwort prÃ¼fen.'
+          : 'Anmeldung fehlgeschlagen. Bitte E-Mail und Passwort prÃ¼fen.';
       case 'TOO_MANY_ATTEMPTS_TRY_LATER':
-        return 'Zu viele Versuche. Bitte später noch einmal probieren.';
+        return 'Zu viele Versuche. Bitte spÃ¤ter noch einmal probieren.';
       case 'USER_DISABLED':
         return 'Dieses Konto wurde deaktiviert.';
       default:
@@ -188,12 +188,27 @@
     return firebaseAuthState;
   }
 
-  async function requestFirebaseIdentity(url, payload, asForm) {
+  function backendUrl(path) {
+    if (!BACKEND_BASE) return null;
+    const p = String(path || '').replace(/^\/+/, '');
+    return `${BACKEND_BASE}/${p}`;
+  }
+
+  async function requestFirebaseIdentity(action, payload) {
+    const url = backendUrl('api/firebase/auth');
+    if (!url) {
+      return {
+        ok: false,
+        errorCode: null,
+        errorMessage: 'Probenhilfe-Backend ist nicht konfiguriert.'
+      };
+    }
+
     try {
       const res = await fetch(url, {
         method: 'POST',
-        headers: asForm ? { 'Content-Type': 'application/x-www-form-urlencoded' } : { 'Content-Type': 'application/json' },
-        body: asForm ? String(payload || '') : JSON.stringify(payload || {})
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, payload: payload || {} })
       });
       let json = null;
       try { json = await res.json(); } catch { json = null; }
@@ -215,36 +230,32 @@
   }
 
   async function signInFirebase(email, password) {
-    const url = `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${encodeURIComponent(FIREBASE_API_KEY)}`;
-    const result = await requestFirebaseIdentity(url, {
+    const result = await requestFirebaseIdentity('signInWithPassword', {
       email,
       password,
       returnSecureToken: true
-    }, false);
+    });
     if (!result.ok) return result;
     applyFirebaseAuthData(result.json || {}, email);
     return { ok: true };
   }
 
   async function signUpFirebase(email, password) {
-    const url = `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${encodeURIComponent(FIREBASE_API_KEY)}`;
-    const result = await requestFirebaseIdentity(url, {
+    const result = await requestFirebaseIdentity('signUp', {
       email,
       password,
       returnSecureToken: true
-    }, false);
+    });
     if (!result.ok) return result;
     applyFirebaseAuthData(result.json || {}, email);
     return { ok: true };
   }
 
   async function refreshFirebaseAccessToken() {
-    if (!FIREBASE_API_KEY || !firebaseAuthState.refreshToken) return false;
-    const url = `https://securetoken.googleapis.com/v1/token?key=${encodeURIComponent(FIREBASE_API_KEY)}`;
+    if (!BACKEND_BASE || !firebaseAuthState.refreshToken) return false;
     const result = await requestFirebaseIdentity(
-      url,
-      `grant_type=refresh_token&refresh_token=${encodeURIComponent(firebaseAuthState.refreshToken)}`,
-      true);
+      'refreshToken',
+      { refreshToken: firebaseAuthState.refreshToken });
     if (!result.ok) {
       clearStoredFirebaseAuth();
       return false;
@@ -264,10 +275,10 @@
   }
 
   async function ensureFirebaseAccess(interactive, purpose) {
-    if (!FIREBASE_DB_BASE || !FIREBASE_API_KEY) {
+    if (!FIREBASE_DB_BASE || !BACKEND_BASE) {
       if (interactive) {
-        openAuthOverlay('Firebase ist noch nicht vollständig konfiguriert.');
-        setAuthStatus('Bitte Firebase-Datenbank-URL und Firebase Web API-Key in Probenhilfe eintragen.', true);
+        openAuthOverlay('Firebase ist noch nicht vollstÃ¤ndig konfiguriert.');
+        setAuthStatus('Bitte Firebase-Datenbank-URL und Probenhilfe-Backend konfigurieren.', true);
       }
       return null;
     }
@@ -566,7 +577,7 @@
     if (sub) {
       const from = data.fromCueId != null ? String(data.fromCueId) : '';
       const to = data.toCueId != null ? String(data.toCueId) : '';
-      sub.textContent = (from && to) ? `Zielwerte für den Sprung ${from} → ${to}` : '';
+      sub.textContent = (from && to) ? `Zielwerte fÃ¼r den Sprung ${from} â†’ ${to}` : '';
     }
   }
 
@@ -622,7 +633,7 @@
   }
 
   function enableLocalDoneToggle() {
-    // Toggle via "Fährt" badge (kein extra Icon im Kopf)
+    // Toggle via "FÃ¤hrt" badge (kein extra Icon im Kopf)
     document.addEventListener('click', (e) => {
       const t = eventTargetElement(e);
       const badge = t?.closest?.(".badge[data-badge='affected']");
@@ -634,7 +645,7 @@
       toggleStepDone(step);
     });
 
-    // Swipe links→rechts auf dem Cue-Kopf toggelt "erledigt" (nur lokal)
+    // Swipe linksâ†’rechts auf dem Cue-Kopf toggelt "erledigt" (nur lokal)
     document.addEventListener('pointerdown', (e) => {
       const t = eventTargetElement(e);
       const head = t?.closest?.('.stepHead');
@@ -654,7 +665,7 @@
         const dx = ev.clientX - startX;
         const dy = ev.clientY - startY;
 
-        // only consider swipe left→right
+        // only consider swipe leftâ†’right
         if (dx < 0) return;
 
         // trigger threshold: mostly horizontal, big enough
@@ -940,12 +951,12 @@
 
         clearRemoteHistory();
 
-        await pullOrdersFromFirebase(false); // keine Undo/Redo-History für einen neuen Report
+        await pullOrdersFromFirebase(false); // keine Undo/Redo-History fÃ¼r einen neuen Report
         showToast('Cue-Sequenz aktualisiert');
         return;
       }
 
-      // Report unverändert -> nur Sortierung aktualisieren und Undo/Redo-History pflegen.
+      // Report unverÃ¤ndert -> nur Sortierung aktualisieren und Undo/Redo-History pflegen.
       const before = cloneOrders(getCurrentOrders());
       const res = await pullOrdersFromFirebase(false);
       const changed = !!res.changed;
@@ -954,7 +965,7 @@
         remoteRedoStack = [];
         updateRemoteButtons();
       }
-      showToast(changed ? 'Sortierung aktualisiert' : 'Keine Änderung');
+      showToast(changed ? 'Sortierung aktualisiert' : 'Keine Ã„nderung');
     });
 
     document.getElementById('syncUndoBtn')?.addEventListener('click', (e) => {
@@ -965,7 +976,7 @@
       remoteRedoStack.push(current);
       applyOrders(snapshot);
       updateRemoteButtons();
-      showToast('Rückgängig');
+      showToast('RÃ¼ckgÃ¤ngig');
     });
 
     document.getElementById('syncRedoBtn')?.addEventListener('click', (e) => {
@@ -976,7 +987,7 @@
       remoteUndoStack.push(current);
       applyOrders(snapshot);
       updateRemoteButtons();
-      showToast('Vorwärts');
+      showToast('VorwÃ¤rts');
     });
 
     document.getElementById('syncUploadBtn')?.addEventListener('click', async (e) => {
@@ -1023,12 +1034,12 @@
       }
 
       setAuthBusy(true);
-      setAuthStatus('Anmeldung läuft ...', false);
+      setAuthStatus('Anmeldung lÃ¤uft ...', false);
 
       let result = await signInFirebase(email, password);
       let usedAccountCreation = false;
       if (!result.ok && shouldOfferFirebaseAccountCreation(result.errorCode)) {
-        const createAccount = window.confirm('Für diese E-Mail gibt es noch kein Konto. Soll jetzt direkt eines erstellt werden?');
+        const createAccount = window.confirm('FÃ¼r diese E-Mail gibt es noch kein Konto. Soll jetzt direkt eines erstellt werden?');
         if (createAccount) {
           usedAccountCreation = true;
           setAuthStatus('Konto wird erstellt ...', false);
@@ -1125,7 +1136,7 @@
 
   function notifyOrderChanged() {
     recomputeAllSections();
-    // Manuelle Sortierung soll keine Undo/Redo-History erzeugen (Undo/Redo ist nur für "Sortierung aktualisieren").
+    // Manuelle Sortierung soll keine Undo/Redo-History erzeugen (Undo/Redo ist nur fÃ¼r "Sortierung aktualisieren").
   }
 
   async function uploadOrdersToFirebase() {
@@ -1358,7 +1369,7 @@
         const wouldMoveAway = (target != null && movesFromCurrent && scriptEnd !== target);
 
         let statusKind = 'SonstigeBewegung';
-        let statusText = 'Für diesen Sprung ist keine vollständige Positionsinformation vorhanden.';
+        let statusText = 'FÃ¼r diesen Sprung ist keine vollstÃ¤ndige Positionsinformation vorhanden.';
         const unblockNotice = needsUnblock ? 'Vor diesem Cue entsperren.' : '';
 
         if (target != null && start != null) {
@@ -1377,12 +1388,12 @@
             blockedThisStep.add(axisId);
           } else if (wouldMoveAway && canHitTargetLater) {
             statusKind = 'BewegtWegVonZiel';
-            statusText = `Cue würde die Achse von ${start} auf ${scriptEnd} setzen (Ziel ${target}).`;
+            statusText = `Cue wÃ¼rde die Achse von ${start} auf ${scriptEnd} setzen (Ziel ${target}).`;
             toBlock.push(axisId);
             blockedThisStep.add(axisId);
           } else if (wouldMoveAway) {
             statusKind = 'BewegtWegVonZiel';
-            statusText = `Cue würde die Achse von ${start} auf ${scriptEnd} setzen (Ziel ${target}).`;
+            statusText = `Cue wÃ¼rde die Achse von ${start} auf ${scriptEnd} setzen (Ziel ${target}).`;
           } else {
             statusKind = 'SonstigeBewegung';
             statusText = `Cue setzt die Achse auf ${scriptEnd} (Ziel ${target}).`;
@@ -1401,11 +1412,11 @@
       const uniqueToUnblock = Array.from(new Set(toUnblock));
       const uniqueAffected = Array.from(new Set(affectedAxes));
 
-      if (uniqueToBlock.length > maxBlocks) setBadge(stepEl, 'block', `ZU VIELE Sperren nötig: ${uniqueToBlock.length}`);
+      if (uniqueToBlock.length > maxBlocks) setBadge(stepEl, 'block', `ZU VIELE Sperren nÃ¶tig: ${uniqueToBlock.length}`);
       else setBadge(stepEl, 'block', uniqueToBlock.length ? `Sperren: ${uniqueToBlock.length}` : '');
 
       setBadge(stepEl, 'unblock', uniqueToUnblock.length ? `Entsperren: ${uniqueToUnblock.length}` : '');
-      setBadge(stepEl, 'affected', uniqueAffected.length ? `Fährt: ${uniqueAffected.length}` : '');
+      setBadge(stepEl, 'affected', uniqueAffected.length ? `FÃ¤hrt: ${uniqueAffected.length}` : '');
 
       uniqueToBlock.forEach(a => blockedEarlier.add(a));
       reorderAxisRows(stepEl);
@@ -1502,8 +1513,8 @@
             </div>
             <div class="badges">
               <div class="reorderBtns">
-                <button class="miniBtn" type="button" data-move="up" title="Nach oben">↑</button>
-                <button class="miniBtn" type="button" data-move="down" title="Nach unten">↓</button>
+                <button class="miniBtn" type="button" data-move="up" title="Nach oben">â†‘</button>
+                <button class="miniBtn" type="button" data-move="down" title="Nach unten">â†“</button>
               </div>
               <span class="badge notice" data-badge="unblock" style="display:${unblockBadgeText ? 'inline-flex' : 'none'}">${escapeHtml(unblockBadgeText)}</span>
               <span class="badge warn" data-badge="block" style="display:${blockBadgeText ? 'inline-flex' : 'none'}">${escapeHtml(blockBadgeText)}</span>
@@ -1522,7 +1533,7 @@
           const axisIdsRaw = Array.isArray(step?.axisIds) ? step.axisIds : [];
           const axisIds = Array.from(new Set(axisIdsRaw.map(Number).filter(Number.isFinite))).sort((a, b) => axisSortOrder(a) - axisSortOrder(b));
           if (axisIds.length === 0) {
-            body.innerHTML = `<div class="disabledNote">Keine Detaildaten verfügbar.</div>`;
+            body.innerHTML = `<div class="disabledNote">Keine Detaildaten verfÃ¼gbar.</div>`;
           } else {
             const rows = axisIds.map(aid => `
               <tr class="row neutral" data-axisid="${aid}">
@@ -1571,7 +1582,7 @@
 
     const report = await tryFetchJson(`${sessionPath}/report`, false, 'die Cue-Sequenz aus dem Online-Speicher zu laden');
     if (!report) {
-      document.getElementById('reportTitle').textContent = 'Noch keine Cue-Sequenz veröffentlicht.';
+      document.getElementById('reportTitle').textContent = 'Noch keine Cue-Sequenz verÃ¶ffentlicht.';
       document.getElementById('reportSubtitle').textContent = '';
       document.getElementById('reportMeta').textContent = '';
       document.getElementById('sectionsHost').innerHTML = '';
@@ -1608,9 +1619,9 @@
           <div class="toolbarRight">
             <button class="btn iconBtn" id="axesBtn" type="button" title="Achsen" aria-label="Achsen">&#x25A6;</button>
             <button class="btn iconBtn" id="syncRefreshBtn" type="button" title="Sortierung aktualisieren" aria-label="Sortierung aktualisieren">&#x21BB;</button>
-            <button class="btn iconBtn" id="syncUndoBtn" type="button" title="Rückgängig (nur nach Cloud-Änderung)" aria-label="Rückgängig" disabled>&#x21B6;</button>
-            <button class="btn iconBtn" id="syncRedoBtn" type="button" title="Vorwärts (nur nach Cloud-Änderung)" aria-label="Vorwärts" disabled>&#x21B7;</button>
-            <button class="btn iconBtn" id="syncUploadBtn" type="button" title="Sortierung hochladen (Cloud überschreiben)" aria-label="Sortierung hochladen">&#x2B06;</button>
+            <button class="btn iconBtn" id="syncUndoBtn" type="button" title="RÃ¼ckgÃ¤ngig (nur nach Cloud-Ã„nderung)" aria-label="RÃ¼ckgÃ¤ngig" disabled>&#x21B6;</button>
+            <button class="btn iconBtn" id="syncRedoBtn" type="button" title="VorwÃ¤rts (nur nach Cloud-Ã„nderung)" aria-label="VorwÃ¤rts" disabled>&#x21B7;</button>
+            <button class="btn iconBtn" id="syncUploadBtn" type="button" title="Sortierung hochladen (Cloud Ã¼berschreiben)" aria-label="Sortierung hochladen">&#x2B06;</button>
             <button class="btn iconBtn" id="helpBtn" type="button" title="Hilfe" aria-label="Hilfe">?</button>
           </div>
         </div>
@@ -1643,7 +1654,7 @@
             <div class="modalTitle">Achsen</div>
             <div class="modalHeadRight">
               <button class="btn iconBtn" id="axesSortBtn" type="button" title="Gelbe Achsen zuerst" aria-label="Gelbe Achsen zuerst" aria-pressed="false">&#x21C5;</button>
-              <button class="btn iconBtn" id="axesCloseBtn" type="button" title="Schließen" aria-label="Schließen">&#x2715;</button>
+              <button class="btn iconBtn" id="axesCloseBtn" type="button" title="SchlieÃŸen" aria-label="SchlieÃŸen">&#x2715;</button>
             </div>
           </div>
           <div class="modalSub" id="axesSub"></div>
@@ -1657,10 +1668,10 @@
         <div class="modal" style="max-width:900px">
           <div class="modalHead">
             <div class="modalTitle">Hilfe</div>
-            <button class="btn iconBtn" id="helpCloseBtn" type="button" title="Schließen" aria-label="Schließen">&#x2715;</button>
+            <button class="btn iconBtn" id="helpCloseBtn" type="button" title="SchlieÃŸen" aria-label="SchlieÃŸen">&#x2715;</button>
           </div>
           <div class="modalBody">
-            <p>Diese Seite zeigt die zuletzt in Probenhilfe veröffentlichte Cue-Sequenz. Du kannst die Reihenfolge ändern – die Details werden dabei sofort neu berechnet.</p>
+            <p>Diese Seite zeigt die zuletzt in Probenhilfe verÃ¶ffentlichte Cue-Sequenz. Du kannst die Reihenfolge Ã¤ndern â€“ die Details werden dabei sofort neu berechnet.</p>
             <h3>Farben</h3>
             <div class="legend legendHelp">
               <div class="chip"><span class="dot bring"></span>Bringt auf Ziel</div>
@@ -1685,9 +1696,9 @@
             <h3>Sortieren</h3>
             <ul>
               <li>Zum Verschieben am <span class="kbd">=</span>-Griff ziehen.</li>
-              <li>Die Buttons <span class="kbd">↑</span>/<span class="kbd">↓</span> verschieben einen Cue um eine Position (funktioniert immer).</li>
-              <li><span class="kbd">&#x2B06;</span> Sortierung hochladen: speichert deine aktuelle Sortierung in die Cloud (überschreibt die Cloud).</li>
-              <li><span class="kbd">&#x21BB;</span> Aktualisieren: lädt die Cue-Sequenz/Sortierung aus der Cloud (überschreibt deine lokale). Wenn in Probenhilfe eine neue Cue-Sequenz ver&ouml;ffentlicht wurde, wird die Seite dabei auch aktualisiert.</li>
+              <li>Die Buttons <span class="kbd">â†‘</span>/<span class="kbd">â†“</span> verschieben einen Cue um eine Position (funktioniert immer).</li>
+              <li><span class="kbd">&#x2B06;</span> Sortierung hochladen: speichert deine aktuelle Sortierung in die Cloud (Ã¼berschreibt die Cloud).</li>
+              <li><span class="kbd">&#x21BB;</span> Aktualisieren: lÃ¤dt die Cue-Sequenz/Sortierung aus der Cloud (Ã¼berschreibt deine lokale). Wenn in Probenhilfe eine neue Cue-Sequenz ver&ouml;ffentlicht wurde, wird die Seite dabei auch aktualisiert.</li>
               <li><span class="kbd">&#x21B6;</span>/<span class="kbd">&#x21B7;</span> R&uuml;ckg&auml;ngig/Vorw&auml;rts: springt zwischen den zuletzt geladenen Cloud-Varianten (nur nach Aktualisieren).</li>
             </ul>
             <h3>Erledigt</h3>
@@ -1717,7 +1728,7 @@
         <div class="legend legendMain">
           <div class="chip"><span class="dot bring"></span>Bringt auf Ziel</div>
           <div class="chip"><span class="dot ok"></span>Keine Bewegung</div>
-          <div class="chip"><span class="dot warn"></span>Würde weg vom Ziel bewegen / Sperren</div>
+          <div class="chip"><span class="dot warn"></span>WÃ¼rde weg vom Ziel bewegen / Sperren</div>
           <div class="chip"><span class="dot neutral"></span>Sonstiges</div>
           <div class="chip"><span class="dot" style="background:var(--notice)"></span>Vor diesem Cue entsperren</div>
         </div>
