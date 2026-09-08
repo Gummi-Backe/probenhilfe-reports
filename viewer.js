@@ -372,7 +372,7 @@
       const ids = steps.map(st => String(st?.stepId || '')).join(',');
       return `${sid}:${ids}`;
     }).join('|');
-    return `${gen}|${from}->${to}|${sub}|${sig}`;
+    return `${r.reportId || ''}|${gen}|${from}->${to}|${sub}|${sig}`;
   }
 
   function eventTargetElement(e) {
@@ -403,6 +403,12 @@
 
   function setAllCollapsed(collapsed) {
     document.body.classList.toggle('compact', collapsed);
+    const toggle = document.querySelector('label.toggle');
+    const icon = toggle?.querySelector('img');
+    const label = collapsed ? 'Detailansicht' : 'Kompaktmodus (zum Sortieren)';
+    if (icon) icon.src = viewerAssetUrl(`icons/nav_view_${collapsed ? 'detail' : 'compact'}.png`);
+    if (toggle) toggle.title = label;
+    document.getElementById('compactToggle')?.setAttribute('aria-label', label);
     document.querySelectorAll('.step').forEach(step => {
       const body = step.querySelector('.stepBody');
       if (!body) return;
@@ -455,6 +461,16 @@
   }
 
   let phData = null;
+  let conditionReportId = null;
+  let conditionValidationErrors = [];
+
+  function unwrapReport(wrapper) {
+    if (!wrapper) return null;
+    const report = wrapper.conditionReport;
+    if (!report && wrapper.version !== 2) return wrapper;
+    if (report?.version === 2 && typeof report.reportId === 'string' && report.reportId) return report;
+    return { title: 'Aktualisierung erforderlich', subtitle: 'Die Fahrtbedingungen sind unvollstaendig oder benoetigen eine neuere Version.', sections: [] };
+  }
   let phAxes = null;
   let lastRemoteRev = null;
   let axesChangedFirst = false;
@@ -928,7 +944,8 @@
         return;
       }
 
-      const report = await tryFetchJson(`${sessionPath}/report`, false, 'die Cue-Sequenz aus dem Online-Speicher zu laden');
+      const wrapper = await tryFetchJson(`${sessionPath}/report`, false, 'die Cue-Sequenz aus dem Online-Speicher zu laden');
+      const report = unwrapReport(wrapper);
       if (!report) {
         showToast('Keine Daten');
         return;
@@ -938,6 +955,7 @@
       const reportChanged = !currentReportKey || newKey !== currentReportKey;
 
       if (reportChanged) {
+        conditionReportId = report === wrapper?.conditionReport ? report.reportId : null;
         phData = report.phData || null;
         phAxes = report.phAxes || null;
         lastRemoteRev = null;
@@ -1095,7 +1113,7 @@
       const byId = new Map(all.map(el => [el.dataset.stepId, el]));
       const used = new Set();
       const newOrder = [];
-      desired.forEach(id => { const el = byId.get(id); if (el) { newOrder.push(el); used.add(id); } });
+      desired.forEach(id => { const el = byId.get(id); if (el && !used.has(id)) { newOrder.push(el); used.add(id); } });
       all.forEach(el => { const id = el.dataset.stepId; if (!used.has(id)) newOrder.push(el); });
       newOrder.forEach(el => stepsEl.appendChild(el));
       updateStepIndices(stepsEl);
@@ -1140,15 +1158,35 @@
   }
 
   async function uploadOrdersToFirebase() {
+    recomputeAllSections();
+    if (conditionValidationErrors.length) {
+      showToast('Die Fahrtfolge verletzt Fahrtbedingungen und kann nicht hochgeladen werden.');
+      return;
+    }
+    // Keep the validated snapshot stable while authentication or network checks are pending.
+    const orders = getCurrentOrders();
+    const axes = getPhAxes();
+    const reportId = conditionReportId;
     const sessionPath = await ensureFirebaseSessionPath(true, 'die Sortierung im Online-Speicher zu speichern');
     if (!sessionPath) {
       showToast('Anmeldung abgebrochen');
       return;
     }
 
-    const orders = getCurrentOrders();
-    const axes = getPhAxes();
     const now = Date.now();
+    if (reportId) {
+      const current = await tryFetchJson(`${sessionPath}/report`, false, 'die aktuelle Cue-Sequenz zu pruefen');
+      if (current?.conditionReport?.reportId !== reportId || conditionReportId !== reportId) {
+        showToast('Die Cue-Sequenz wurde am PC geaendert. Bitte zuerst neu laden.');
+        return;
+      }
+      const ok = await patchFirebase(sessionPath, {
+        conditionOrders: { reportId, rev: now, orders }
+      }, false, 'die Sortierung im Online-Speicher zu speichern');
+      if (ok) lastRemoteRev = now;
+      showToast(ok ? 'Sortierung hochgeladen' : 'Upload fehlgeschlagen');
+      return;
+    }
     const payload = {
       rev: now,
       fromCueId: axes?.fromCueId ?? null,
@@ -1170,6 +1208,27 @@
     if (!sessionPath) return { changed: false, hadData: false };
 
     const session = await tryFetchJson(sessionPath, false, 'die Sortierung aus dem Online-Speicher zu laden');
+    if (conditionReportId) {
+      const envelope = session?.conditionOrders;
+      if (session?.report?.conditionReport?.reportId !== conditionReportId || envelope?.reportId !== conditionReportId) {
+        showToast('Keine passende Sortierung. Bitte die aktuelle Cue-Sequenz neu laden.');
+        return { changed: false, hadData: false };
+      }
+      if (envelope.rev === lastRemoteRev) return { changed: false, hadData: true };
+      const models = getPhData()?.suggestions || {};
+      let valid = !!window.PHMovementConditions;
+      try {
+        valid &&= Object.keys(models).every(sid => Array.isArray(envelope.orders?.[sid])
+          && !window.PHMovementConditions.evaluate(models[sid], envelope.orders[sid]).error);
+      } catch { valid = false; }
+      if (!valid) {
+        showToast('Die gespeicherte Sortierung verletzt Fahrtbedingungen. Sie wurde nicht uebernommen.');
+        return { changed: false, hadData: false };
+      }
+      lastRemoteRev = envelope.rev;
+      applyOrders(envelope.orders);
+      return { changed: true, hadData: true };
+    }
     if (!session || !session.orders) return { changed: false, hadData: false };
     if (session.rev && lastRemoteRev && session.rev === lastRemoteRev) return { changed: false, hadData: true };
     lastRemoteRev = session.rev || null;
@@ -1179,6 +1238,7 @@
 
   function mapStatusToRowClass(statusKind) {
     switch (statusKind) {
+      case 'Vorbereitung': return 'preparation';
       case 'BringtAufZiel': return 'bring';
       case 'BleibtRichtig':
       case 'KeineBewegung': return 'ok';
@@ -1230,10 +1290,9 @@
     if (rows.length <= 1) return;
 
     function groupRank(tr) {
-      if (tr.classList.contains('warn')) return 0;
-      if (tr.classList.contains('bring')) return 1;
+      if (tr.classList.contains('warn') || tr.querySelector('[data-role=unblockNotice]')?.textContent.trim()) return 0;
       if (tr.classList.contains('ok')) return 2;
-      return 3;
+      return 1;
     }
 
     rows.sort((a, b) => {
@@ -1248,12 +1307,51 @@
   }
 
   function recomputeSection(section, model, maxBlocksPerCue) {
+    if (conditionReportId || model?.movementConditions) {
+      section.classList.add('conditionSequence');
+      const steps = Array.from(section.querySelectorAll('.steps > .step'));
+      let evaluation;
+      try {
+        evaluation = window.PHMovementConditions?.evaluate(model, steps.map(el => el.dataset.stepId));
+      } catch { /* Invalid input must never fall back to the legacy calculation. */ }
+      evaluation ||= { error: 'Die Fahrtbedingungen konnten nicht geprueft werden. Bitte neu laden.', steps: {} };
+      let error = section.querySelector('.conditionError');
+      if (!error) {
+        error = document.createElement('div');
+        error.className = 'conditionError';
+        error.setAttribute('role', 'alert');
+        section.prepend(error);
+      }
+      error.textContent = evaluation.error || '';
+      error.hidden = !evaluation.error;
+      section.classList.toggle('invalidSequence', !!evaluation.error);
+      if (evaluation.error) conditionValidationErrors.push(evaluation.error);
+      for (const step of steps) {
+        const state = evaluation.steps[step.dataset.stepId];
+        for (const [badge, ids, label] of [
+          ['block', state?.blocked, 'Sperren: '], ['unblock', state?.unblocked, 'Entsperren: '],
+          ['affected', state?.affected, 'Achsen: ']
+        ]) setBadge(step, badge, ids?.length ? label + ids.length : '');
+        for (const tr of step.querySelectorAll('tr[data-axisid]')) {
+          const id = Number(tr.dataset.axisid);
+          const row = state?.rows.find(r => r.axisId === id);
+          const scale = model?.movementConditions?.axes[id]?.scale || 1;
+          const format = value => Number.isFinite(value) ? (value / scale).toLocaleString('de-DE', { maximumFractionDigits: 3 }) : null;
+          setRow(step, id, format(row?.start), format(row?.target), row?.notice,
+            row?.status || (evaluation.error ? 'Fahrtfolge nicht vollstaendig geprueft.' : ''), row?.kind);
+        }
+        reorderAxisRows(step);
+      }
+      return;
+    }
     if (!section || !model) return;
 
     const maxBlocks = Number.isFinite(maxBlocksPerCue) ? maxBlocksPerCue : 3;
     const startPositions = model.startPositions || {};
     const targetPositions = model.targetPositions || {};
-    const cueActions = model.cueActions || {};
+    const cueActions = Object.fromEntries(Object.entries(model.cueActions || {})
+      .filter(([, actions]) => actions != null)
+      .map(([id, actions]) => [id, Object.fromEntries(Object.entries(actions).filter(([, action]) => action != null))]));
 
     const stepsEl = section.querySelector('.steps');
     if (!stepsEl) return;
@@ -1416,7 +1514,7 @@
       else setBadge(stepEl, 'block', uniqueToBlock.length ? `Sperren: ${uniqueToBlock.length}` : '');
 
       setBadge(stepEl, 'unblock', uniqueToUnblock.length ? `Entsperren: ${uniqueToUnblock.length}` : '');
-      setBadge(stepEl, 'affected', uniqueAffected.length ? `Fährt: ${uniqueAffected.length}` : '');
+      setBadge(stepEl, 'affected', uniqueAffected.length ? `Achsen: ${uniqueAffected.length}` : '');
 
       uniqueToBlock.forEach(a => blockedEarlier.add(a));
       reorderAxisRows(stepEl);
@@ -1424,15 +1522,17 @@
   }
 
   function recomputeAllSections() {
+    conditionValidationErrors = [];
     const ph = getPhData();
-    if (!ph || !ph.suggestions) return;
-    const maxBlocks = ph.maxBlocksPerCue;
+    const maxBlocks = ph?.maxBlocksPerCue;
     document.querySelectorAll('.section').forEach(section => {
       const sid = section.dataset.sid;
-      const model = sid ? ph.suggestions[sid] : null;
-      if (!model) return;
+      const model = sid ? ph?.suggestions?.[sid] : null;
+      if (!model && !conditionReportId) return;
       recomputeSection(section, model, maxBlocks);
     });
+    const upload = document.getElementById('syncUploadBtn');
+    if (upload) upload.disabled = conditionValidationErrors.length > 0;
   }
 
   async function renderReport(report) {
@@ -1551,8 +1651,8 @@
                 <table>
                   <thead><tr>
                     <th>Achse</th>
-                    <th class="mono">Sprung-Start</th>
-                    <th class="mono">Sprung-Ziel</th>
+                    <th class="mono">Startposition</th>
+                    <th class="mono">Zielposition</th>
                     <th>Status</th>
                   </tr></thead>
                   <tbody>${rows}</tbody>
@@ -1580,7 +1680,9 @@
       return;
     }
 
-    const report = await tryFetchJson(`${sessionPath}/report`, false, 'die Cue-Sequenz aus dem Online-Speicher zu laden');
+    const wrapper = await tryFetchJson(`${sessionPath}/report`, false, 'die Cue-Sequenz aus dem Online-Speicher zu laden');
+    const report = unwrapReport(wrapper);
+    conditionReportId = report && report === wrapper?.conditionReport ? report.reportId : null;
     if (!report) {
       document.getElementById('reportTitle').textContent = 'Noch keine Cue-Sequenz veröffentlicht.';
       document.getElementById('reportSubtitle').textContent = '';
@@ -1605,6 +1707,15 @@
     showToast('Aktualisiert');
   }
 
+  function viewerAssetUrl(fileName) {
+    const version = String(window.PH_VIEWER_ASSET_VERSION || '').trim();
+    return fileName + (version ? `?v=${encodeURIComponent(version)}` : '');
+  }
+
+  function viewerIcon(name) {
+    return `<img class="toolIcon" src="${viewerAssetUrl(`icons/${name}.png`)}" alt="" draggable="false"/>`;
+  }
+
   function mountUi() {
     const app = document.getElementById('app');
     if (!app) return;
@@ -1612,17 +1723,17 @@
       <div class="toolbar">
         <div class="toolbarInner">
           <div class="toolbarLeft">
-            <label class="toggle" title="Kompaktmodus (zum Sortieren)"><input id="compactToggle" type="checkbox"/><span class="toggleIcon">&#9776;</span></label>
+            <label class="toggle" title="Kompaktmodus (zum Sortieren)"><input id="compactToggle" type="checkbox" aria-label="Kompaktmodus (zum Sortieren)"/>${viewerIcon('nav_view_compact')}</label>
             <div class="authState" id="authStateText">Firebase: nicht angemeldet</div>
             <button class="btn authBtn" id="authToggleBtn" type="button" title="Bei Firebase anmelden" aria-label="Anmelden">Anmelden</button>
           </div>
           <div class="toolbarRight">
-            <button class="btn iconBtn" id="axesBtn" type="button" title="Achsen" aria-label="Achsen">&#x25A6;</button>
-            <button class="btn iconBtn" id="syncRefreshBtn" type="button" title="Sortierung aktualisieren" aria-label="Sortierung aktualisieren">&#x21BB;</button>
-            <button class="btn iconBtn" id="syncUndoBtn" type="button" title="Rückgängig (nur nach Cloud-Änderung)" aria-label="Rückgängig" disabled>&#x21B6;</button>
-            <button class="btn iconBtn" id="syncRedoBtn" type="button" title="Vorwärts (nur nach Cloud-Änderung)" aria-label="Vorwärts" disabled>&#x21B7;</button>
-            <button class="btn iconBtn" id="syncUploadBtn" type="button" title="Sortierung hochladen (Cloud überschreiben)" aria-label="Sortierung hochladen">&#x2B06;</button>
-            <button class="btn iconBtn" id="helpBtn" type="button" title="Hilfe" aria-label="Hilfe">?</button>
+            <button class="btn iconBtn" id="axesBtn" type="button" title="Achsen" aria-label="Achsen">${viewerIcon('nav_axes')}</button>
+            <button class="btn iconBtn" id="syncRefreshBtn" type="button" title="Sortierung aktualisieren" aria-label="Sortierung aktualisieren">${viewerIcon('nav_refresh')}</button>
+            <button class="btn iconBtn" id="syncUndoBtn" type="button" title="Rückgängig (nur nach Cloud-Änderung)" aria-label="Rückgängig" disabled>${viewerIcon('nav_undo')}</button>
+            <button class="btn iconBtn" id="syncRedoBtn" type="button" title="Vorwärts (nur nach Cloud-Änderung)" aria-label="Vorwärts" disabled>${viewerIcon('nav_redo')}</button>
+            <button class="btn iconBtn" id="syncUploadBtn" type="button" title="Sortierung hochladen (Cloud überschreiben)" aria-label="Sortierung hochladen">${viewerIcon('nav_upload')}</button>
+            <button class="btn iconBtn" id="helpBtn" type="button" title="Hilfe" aria-label="Hilfe">${viewerIcon('nav_help')}</button>
           </div>
         </div>
       </div>
@@ -1678,36 +1789,38 @@
               <div class="chip"><span class="dot ok"></span>Keine Bewegung</div>
               <div class="chip"><span class="dot warn"></span>W&uuml;rde weg vom Ziel bewegen / Sperren</div>
               <div class="chip"><span class="dot neutral"></span>Sonstiges</div>
+              <div class="chip"><span class="dot preparation"></span>Vorbereitung (Bedingung)</div>
               <div class="chip"><span class="dot" style="background:var(--notice)"></span>Vor diesem Cue entsperren</div>
             </div>
             <h3>Ein-/Ausklappen</h3>
             <ul>
               <li>Tippe auf einen Cue-Kopf, um genau diesen Cue ein- oder auszuklappen.</li>
-              <li><span class="kbd">&#9776;</span> Kompaktmodus (gut zum Sortieren).</li>
+              <li><span class="kbd">${viewerIcon('nav_view_compact')}</span> Kompaktmodus (gut zum Sortieren). <span class="kbd">${viewerIcon('nav_view_detail')}</span> Zurück zur Detailansicht.</li>
             </ul>
             <h3>Buttons oben</h3>
             <ul>
-              <li><span class="kbd">?</span> &Ouml;ffnet diese Hilfe.</li>
-              <li><span class="kbd">&#x25A6;</span> Achsen-Ansicht.</li>
-              <li><span class="kbd">&#x21BB;</span> Aktualisieren (Cue-Sequenz/Sortierung aus der Cloud laden).</li>
-              <li><span class="kbd">&#x21B6;</span>/<span class="kbd">&#x21B7;</span> R&uuml;ckg&auml;ngig/Vorw&auml;rts (nur nach Aktualisieren).</li>
-              <li><span class="kbd">&#x2B06;</span> Sortierung hochladen (Cloud &uuml;berschreiben).</li>
+              <li><span class="kbd">${viewerIcon('nav_help')}</span> &Ouml;ffnet diese Hilfe.</li>
+              <li><span class="kbd">${viewerIcon('nav_axes')}</span> Achsen-Ansicht.</li>
+              <li><span class="kbd">${viewerIcon('nav_refresh')}</span> Aktualisieren (Cue-Sequenz/Sortierung aus der Cloud laden).</li>
+              <li><span class="kbd">${viewerIcon('nav_undo')}</span>/<span class="kbd">${viewerIcon('nav_redo')}</span> R&uuml;ckg&auml;ngig/Vorw&auml;rts (nur nach Aktualisieren).</li>
+              <li><span class="kbd">${viewerIcon('nav_upload')}</span> Sortierung hochladen (Cloud &uuml;berschreiben).</li>
             </ul>
             <h3>Sortieren</h3>
+            <p>Fahrtbedingungen aus der PC-App werden bei jeder Änderung der Reihenfolge geprüft. Eine verletzte Bedingung wird auch im Kompaktmodus angezeigt; die Sortierung kann dann nicht hochgeladen werden. Violette Zeilen zeigen Vorbereitungsfahrten mit ihrer tatsächlichen Start- und Zwischenposition.</p>
             <ul>
               <li>Zum Verschieben am <span class="kbd">=</span>-Griff ziehen.</li>
               <li>Die Buttons <span class="kbd">↑</span>/<span class="kbd">↓</span> verschieben einen Cue um eine Position (funktioniert immer).</li>
-              <li><span class="kbd">&#x2B06;</span> Sortierung hochladen: speichert deine aktuelle Sortierung in die Cloud (überschreibt die Cloud).</li>
-              <li><span class="kbd">&#x21BB;</span> Aktualisieren: lädt die Cue-Sequenz/Sortierung aus der Cloud (überschreibt deine lokale). Wenn in Probenhilfe eine neue Cue-Sequenz ver&ouml;ffentlicht wurde, wird die Seite dabei auch aktualisiert.</li>
-              <li><span class="kbd">&#x21B6;</span>/<span class="kbd">&#x21B7;</span> R&uuml;ckg&auml;ngig/Vorw&auml;rts: springt zwischen den zuletzt geladenen Cloud-Varianten (nur nach Aktualisieren).</li>
+              <li><span class="kbd">${viewerIcon('nav_upload')}</span> Sortierung hochladen: speichert deine aktuelle Sortierung in die Cloud (überschreibt die Cloud).</li>
+              <li><span class="kbd">${viewerIcon('nav_refresh')}</span> Aktualisieren: lädt die Cue-Sequenz/Sortierung aus der Cloud (überschreibt deine lokale). Wenn in Probenhilfe eine neue Cue-Sequenz ver&ouml;ffentlicht wurde, wird die Seite dabei auch aktualisiert.</li>
+              <li><span class="kbd">${viewerIcon('nav_undo')}</span>/<span class="kbd">${viewerIcon('nav_redo')}</span> R&uuml;ckg&auml;ngig/Vorw&auml;rts: springt zwischen den zuletzt geladenen Cloud-Varianten (nur nach Aktualisieren).</li>
             </ul>
             <h3>Erledigt</h3>
             <ul>
-              <li>Tippe auf <span class="kbd">F&auml;hrt: ...</span>, um einen Cue als erledigt zu markieren (blasser). Nochmal tippen macht es r&uuml;ckg&auml;ngig.</li>
+              <li>Tippe auf <span class="kbd">Achsen: ...</span>, um einen Cue als erledigt zu markieren (blasser). Nochmal tippen macht es r&uuml;ckg&auml;ngig.</li>
             </ul>
             <h3>Achsen</h3>
             <ul>
-              <li><span class="kbd">&#x25A6;</span> Zeigt die Zielwerte der Achsen f&uuml;r den aktuellen Cue-Sprung.</li>
+              <li><span class="kbd">${viewerIcon('nav_axes')}</span> Zeigt die Zielwerte der Achsen f&uuml;r den aktuellen Cue-Sprung.</li>
               <li><span class="kbd">&#x21C5;</span> Sortiert die gelb markierten (ver&auml;nderten) Achsen nach oben.</li>
             </ul>
           </div>
@@ -1730,6 +1843,7 @@
           <div class="chip"><span class="dot ok"></span>Keine Bewegung</div>
           <div class="chip"><span class="dot warn"></span>Würde weg vom Ziel bewegen / Sperren</div>
           <div class="chip"><span class="dot neutral"></span>Sonstiges</div>
+          <div class="chip"><span class="dot preparation"></span>Vorbereitung (Bedingung)</div>
           <div class="chip"><span class="dot" style="background:var(--notice)"></span>Vor diesem Cue entsperren</div>
         </div>
         <div id="sectionsHost"></div>
@@ -1738,9 +1852,7 @@
 
     const logo = document.getElementById('appLogo');
     if (logo) {
-      const ver = String(window.PH_VIEWER_ASSET_VERSION || '').trim();
-      const v = ver ? `?v=${encodeURIComponent(ver)}` : '';
-      logo.src = `LogoProbenhilfe.png${v}`;
+      logo.src = viewerAssetUrl('LogoProbenhilfe.png');
       logo.addEventListener('error', () => { logo.style.display = 'none'; }, { once: true });
     }
   }

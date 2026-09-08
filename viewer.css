@@ -14,6 +14,8 @@
   --neutral:#131a2c;
   --neutralBorder:#2a3658;
   --notice:#ffb703;
+  --preparation:rgba(53,33,77,.55);
+  --preparationBorder:#c18aff;
 }
 
 *{box-sizing:border-box}
@@ -79,9 +81,11 @@ body.modalOpen{
   font-size:14px;
 }
 .btn:hover{background:rgba(255,255,255,.06)}
+.btn:disabled{opacity:.35; cursor:default; transform:none}
 .btn:active{transform:translateY(1px)}
 .btn.isActive{background:rgba(255,255,255,.10); border-color:rgba(255,255,255,.18)}
 .iconBtn{
+  flex-shrink:0;
   width:66px;
   height:66px;
   padding:0;
@@ -91,6 +95,8 @@ body.modalOpen{
   font-size:30px;
 }
 .toggle{
+  position:relative;
+  flex-shrink:0;
   display:inline-flex;
   align-items:center;
   justify-content:center;
@@ -101,8 +107,10 @@ body.modalOpen{
   border-radius:10px;
   cursor:pointer;
 }
-.toggle input{display:none}
-.toggleIcon{font-size:33px; opacity:.95}
+.toggle input{position:absolute; width:1px; height:1px; opacity:0}
+.toggle:focus-within{outline:2px solid var(--bringBorder); outline-offset:2px}
+.toolIcon{width:32px; height:32px; object-fit:contain; pointer-events:none}
+.kbd .toolIcon{width:22px; height:22px; vertical-align:middle}
 
 .wrap{max-width:1200px; margin:0 auto; padding:14px 10px 60px}
 .header{
@@ -136,7 +144,6 @@ body.modalOpen{
   gap:10px;
   margin:12px 0 18px;
 }
-.legendMain{display:none}
 .chip{
   display:inline-flex;
   align-items:center;
@@ -153,6 +160,7 @@ body.modalOpen{
 .dot.bring{background:var(--bringBorder)}
 .dot.warn{background:var(--warnBorder)}
 .dot.neutral{background:var(--neutralBorder)}
+.dot.preparation{background:var(--preparationBorder)}
 
 .section{margin:16px 0 22px}
 .sectionTitle{display:none}
@@ -445,7 +453,24 @@ th{color:var(--muted); font-weight:700; text-align:left; font-size:12px}
   table{min-width: 460px}
   .cueText{max-width: 280px}
   .appLogo{width:64px; height:64px}
-  .toolbarInner{gap:8px}
+  .toolbarInner{gap:8px; flex-wrap:wrap; overflow-x:visible}
   .toolbarLeft,.toolbarRight{gap:6px}
-  .authState{font-size:12px; padding:0 10px}
+  .toolbarLeft,.toolbarRight{width:100%}
+  .toolbarRight{justify-content:space-between}
+  .toolbar .iconBtn,.toolbar .toggle{width:44px; height:44px}
+  .authState{font-size:12px; padding:0 10px; flex:1; min-width:0; display:block; line-height:44px; overflow:hidden; text-overflow:ellipsis}
+}
+
+.row.preparation { background: var(--preparation); }
+.row.preparation td:first-child::before { background: var(--preparationBorder); }
+.conditionError { padding: 12px; color: #ffd2d2; background: #48232c; border-left: 3px solid #ff8c98; margin-bottom: 10px; }
+.invalidSequence .steps { border-top: 2px solid #ff8c98; }
+
+@media (max-width:720px) {
+  .conditionSequence .stepHead { flex-wrap: wrap; }
+  .conditionSequence .stepLeft { flex: 1 1 100%; }
+  .conditionSequence .stepIndex { flex-shrink: 0; }
+  .conditionSequence .badges { flex-wrap: wrap; max-width: 100%; }
+  .conditionSequence .badge { white-space: normal; overflow-wrap: anywhere; max-width: 100%; }
+  .conditionSequence .cueText { white-space: normal; overflow-wrap: anywhere; }
 }
