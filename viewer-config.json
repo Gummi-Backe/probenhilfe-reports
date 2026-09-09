@@ -1,0 +1,5 @@
+{
+  "firebaseBase": "https://probenhilfe-sync-default-rtdb.europe-west1.firebasedatabase.app",
+  "backendBase": "https://probenhilfe.vercel.app",
+  "assetVersion": "2026-09-09-webadresse"
+}

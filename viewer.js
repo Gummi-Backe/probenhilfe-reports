@@ -427,7 +427,7 @@
     if (axisMetaLoadPromise && !force) return axisMetaLoadPromise;
     axisMetaLoadPromise = (async () => {
       try {
-        const res = await fetch('axis-meta.json', { cache: 'no-store' });
+        const res = await fetch(viewerAssetUrl('axis-meta.json'), { cache: 'no-store' });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const json = await res.json();
         const map = {};
@@ -1709,7 +1709,8 @@
 
   function viewerAssetUrl(fileName) {
     const version = String(window.PH_VIEWER_ASSET_VERSION || '').trim();
-    return fileName + (version ? `?v=${encodeURIComponent(version)}` : '');
+    const base = String(window.PH_VIEWER_ASSET_BASE || '');
+    return base + fileName + (version ? `?v=${encodeURIComponent(version)}` : '');
   }
 
   function viewerIcon(name) {
@@ -1871,7 +1872,9 @@
     await loadReport();
   }
 
-  window.addEventListener('DOMContentLoaded', () => {
+  if (document.readyState === 'loading') {
+    window.addEventListener('DOMContentLoaded', start, { once: true });
+  } else {
     start();
-  });
+  }
 })();
