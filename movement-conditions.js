@@ -5,7 +5,8 @@
   const allowed = (rule, value) => number(value) && (rule.requirement === 0 ? value > rule.position
     : rule.requirement === 1 ? value < rule.position
       : rule.requirement === 2 && number(rule.upperPosition) && value >= rule.position && value <= rule.upperPosition);
-  const inRange = (value, min, max) => (min == null || value >= min) && (max == null || value <= max);
+  const inRange = (value, min, max, equivalent) => (min == null || value >= min || equivalent(value, min))
+    && (max == null || value <= max || equivalent(value, max));
 
   function evaluate(model, order) {
     const plan = model?.movementConditions;
@@ -59,8 +60,13 @@
           return fail('Die Positionsfahrt ist unvollstaendig.', index);
         actions = { [step.axisId]: targets[step.axisId] };
       } else if (step.kind === 'cue') {
-        const cue = model.cueActions?.[step.cueId];
+        const rawCue = model.cueActions?.[step.cueId];
+        // Firebase represents sparse numeric maps as arrays with null placeholders.
+        const cue = Array.isArray(rawCue)
+          ? Object.fromEntries(Object.entries(rawCue).filter(([, action]) => action != null)) : rawCue;
         if (!cue || !Object.keys(cue).length) return fail('Positionsdaten des Cues fehlen.', index);
+        if (Object.values(cue).some(action => !action || typeof action !== 'object'))
+          return fail('Positionsdaten des Cues sind ungueltig.', index);
         if ([...blocks].some(axis => !own(cue, axis))) return fail('Eine Sperre passt nicht zum Cue.', index);
         totalBlocks += blocks.size;
         if (blocks.size) blockedSteps++;
@@ -77,8 +83,9 @@
         const from = result.positions[rule.movingAxisId], to = next[rule.movingAxisId];
         const applies = rule.trigger === 1
           ? step.kind === 'cue' && step.cueId === rule.cueId && (rule.direction === 0 || (rule.direction === 2) === step.backward)
-          : own(next, rule.movingAxisId) && (!number(from) || from !== to
-            && inRange(from, rule.fromMinimum, rule.fromMaximum) && inRange(to, rule.toMinimum, rule.toMaximum));
+          : own(next, rule.movingAxisId) && (!number(from) || !same(rule.movingAxisId, from, to)
+            && inRange(from, rule.fromMinimum, rule.fromMaximum, (a, b) => same(rule.movingAxisId, a, b))
+            && inRange(to, rule.toMinimum, rule.toMaximum, (a, b) => same(rule.movingAxisId, a, b)));
         if (!applies) continue;
         const requirement = `Fahrtbedingung "${rule.name}": ${label(rule.requiredAxisId)}`;
         if (!allowed(rule, result.positions[rule.requiredAxisId]))
@@ -88,7 +95,7 @@
       }
       for (const [axis, end] of Object.entries(actions)) {
         const start = result.positions[axis], target = targets[axis], blocked = blocks.has(axis);
-        const moving = !blocked && start !== end;
+        const moving = !blocked && !same(axis, start, end);
         if (!blocked && !preparationAxes.has(axis) && same(axis, start, target) && !same(axis, end, target))
           return fail(`${label(axis)} wuerde ohne Sperre die bereits erreichte Zielposition verlassen.`, index);
         const preparation = moving && !same(axis, end, target)
